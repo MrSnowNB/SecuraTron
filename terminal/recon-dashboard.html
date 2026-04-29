@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECRATRON // RECON DASHBOARD v3.0</title>
+<style>
+  /* === RESET & BASE === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --amber: #ffb000;
+    --amber-dim: #996a00;
+    --amber-glow: #ffc840;
+    --red: #ff3030;
+    --red-dim: #801818;
+    --green: #30ff60;
+    --bg: #0a0a0a;
+    --panel-bg: #0d0d0d;
+    --border: #1a1a1a;
+    --text: #d4a800;
+    --text-dim: #6b5500;
+    --mono: 'Courier New', 'Lucida Console', monospace;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* === CRT EFFECTS === */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.15) 0px,
+      rgba(0,0,0,0.15) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* === LAYOUT === */
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+  }
+
+  /* === TOP BAR === */
+  #topbar {
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    z-index: 10;
+  }
+  #topbar .logo {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--amber);
+    text-shadow: 0 0 10px var(--amber-dim);
+    letter-spacing: 3px;
+  }
+  #topbar .logo span { color: var(--text-dim); font-size: 11px; letter-spacing: 1px; }
+  #model-status {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+  }
+  #model-status .badge {
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-dim);
+  }
+  #model-status .badge.active {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+  }
+  #role-selector {
+    display: flex;
+    gap: 4px;
+  }
+  #role-selector button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #role-selector button:hover { color: var(--amber); border-color: var(--amber-dim); }
+  #role-selector button.active {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: rgba(255,176,0,0.1);
+    text-shadow: 0 0 8px var(--amber-dim);
+  }
+
+  /* === MAIN GRID === */
+  #main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+  }
+
+  /* === CHAT PANEL === */
+  #chat-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--amber-dim) var(--bg);
+  }
+  #chat-messages::-webkit-scrollbar { width: 6px; }
+  #chat-messages::-webkit-scrollbar-track { background: var(--bg); }
+  #chat-messages::-webkit-scrollbar-thumb { background: var(--amber-dim); }
+
+  .msg { margin-bottom: 12px; line-height: 1.5; }
+  .msg .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+  }
+  .msg .label.attacker { color: var(--red); }
+  .msg .label.defender { color: var(--green); }
+  .msg .label.analyst { color: var(--amber); }
+  .msg .label.system { color: var(--amber); font-style: italic; }
+  .msg .label.stt { color: #60a0ff; }
+  .msg .body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 4px 0 4px 12px;
+    border-left: 2px solid var(--border);
+  }
+  .msg.user .body { border-left-color: var(--amber-dim); }
+  .msg.system .body { border-left-color: transparent; font-style: italic; color: var(--text-dim); }
+
+  /* === CHAT INPUT === */
+  #chat-input-area {
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  #chat-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    resize: none;
+    min-height: 36px;
+    max-height: 120px;
+  }
+  #chat-input:focus { border-color: var(--amber-dim); }
+  #chat-input::placeholder { color: var(--text-dim); }
+
+  .btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .btn.active {
+    color: var(--amber);
+    border-color: var(--amber);
+    background: rgba(255,176,0,0.1);
+    animation: pulse-border 2s infinite;
+  }
+  .btn.danger:hover { color: var(--red); border-color: var(--red); }
+  .btn.recording {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,48,48,0.15);
+    animation: pulse-rec 1s infinite;
+  }
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 4px var(--amber-dim); }
+    50% { box-shadow: 0 0 12px var(--amber); }
+  }
+  @keyframes pulse-rec {
+    0%, 100% { box-shadow: 0 0 4px var(--red-dim); }
+    50% { box-shadow: 0 0 16px var(--red); }
+  }
+
+  /* === RIGHT PANEL === */
+  #right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* === VOICE CONTROLS === */
+  #voice-section {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+  }
+  #voice-section h3 {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  #voice-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  #voice-status {
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #voice-status .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+  }
+  #voice-status .dot.live { background: var(--green); animation: blink 1s infinite; }
+  #voice-status .dot.error { background: var(--red); }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* === IMAGE GEN === */
+  #image-section {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  #image-section h3 {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  #image-prompt-area {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  #image-prompt {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 8px;
+    outline: none;
+  }
+  #image-prompt:focus { border-color: var(--amber-dim); }
+  #image-prompt::placeholder { color: var(--text-dim); }
+
+  #image-gallery {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--amber-dim) var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .image-entry {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .image-entry img {
+    width: 100%;
+    display: block;
+  }
+  .image-entry .caption {
+    padding: 4px 6px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  /* === SCAN RESULTS === */
+  #scan-section {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  #scan-section h3 {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .scan-entry {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-left: 2px solid var(--border);
+    margin-bottom: 4px;
+    color: var(--text-dim);
+  }
+  .scan-entry.critical { border-left-color: var(--red); color: var(--red); }
+  .scan-entry.warning { border-left-color: var(--amber); color: var(--amber); }
+  .scan-entry.info { border-left-color: #60a0ff; color: #60a0ff; }
+
+  /* === BOTTOM BAR === */
+  #bottombar {
+    border-top: 1px solid var(--border);
+    padding: 4px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--panel-bg);
+    z-index: 10;
+  }
+  #bottombar .sep { margin: 0 8px; color: var(--border); }
+
+  /* === THINKING INDICATOR === */
+  .thinking {
+    display: inline-block;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .thinking::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+  }
+
+  /* === TRANSCRIPT === */
+  #transcript-area {
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  #transcript-area h3 {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  #transcript-text {
+    font-size: 10px;
+    color: #60a0ff;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* === LOADING OVERLAY === */
+  #loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    gap: 16px;
+  }
+  #loading-overlay .title {
+    font-size: 20px;
+    color: var(--amber);
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px var(--amber-dim);
+  }
+  #loading-overlay .subtitle {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .boot-line {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    #main-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 300px; }
+    #chat-panel { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<!-- BOOT LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="title">SECRATRON</div>
+  <div class="subtitle">MULTI-MODAL RECON DASHBOARD v3.0</div>
+  <div class="boot-line" id="boot-status">Initializing...</div>
+</div>
+
+<div id="app" style="display:none;">
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <div class="logo">
+      SECRATRON <span>// RECON DASHBOARD</span>
+    </div>
+
+    <div id="role-selector">
+      <button data-role="attacker" class="active">[ ATTACKER ]</button>
+      <button data-role="defender">[ DEFENDER ]</button>
+      <button data-role="analyst">[ ANALYST ]</button>
+    </div>
+
+    <div id="model-status">
+      <span class="badge active" id="badge-llm">LLM: Qwen3.6</span>
+      <span class="badge active" id="badge-tts">TTS: kokoro</span>
+      <span class="badge active" id="badge-stt">STT: Whisper</span>
+      <span class="badge active" id="badge-img">IMG: Flux-2</span>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div id="main-grid">
+    <!-- CHAT PANEL -->
+    <div id="chat-panel">
+      <div id="chat-messages"></div>
+      <div id="chat-input-area">
+        <button class="btn" id="btn-mic" title="Voice input (STT)">
+          <span id="mic-icon">⊘</span> MIC
+        </button>
+        <textarea id="chat-input" placeholder="> Enter command or message..." rows="1"></textarea>
+        <button class="btn" id="btn-send" title="Send message">SEND</button>
+        <button class="btn" id="btn-tts-toggle" title="Toggle voice output">
+          <span id="tts-icon">♫</span> TTS
+        </button>
+        <button class="btn" id="btn-clear" title="Clear chat" style="margin-left:auto;">CLR</button>
+      </div>
+      <div id="transcript-area">
+        <h3>// LIVE TRANSCRIPT</h3>
+        <div id="transcript-text">Voice transcript will appear here...</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <!-- VOICE CONTROLS -->
+      <div id="voice-section">
+        <h3>// VOICE LOOP</h3>
+        <div id="voice-controls">
+          <button class="btn" id="btn-voice-loop">
+            <span>◉</span> FULL LOOP
+          </button>
+          <button class="btn" id="btn-stop-tts">
+            <span>■</span> STOP
+          </button>
+        </div>
+        <div id="voice-status">
+          <span class="dot" id="voice-dot"></span>
+          <span id="voice-label">STANDBY</span>
+        </div>
+      </div>
+
+      <!-- IMAGE GEN -->
+      <div id="image-section">
+        <h3>// THREAT VISUALIZER</h3>
+        <div id="image-prompt-area">
+          <input id="image-prompt" placeholder="Describe recon image...">
+          <button class="btn" id="btn-gen-img">GEN</button>
+        </div>
+        <div id="image-gallery"></div>
+      </div>
+
+      <!-- SCAN RESULTS -->
+      <div id="scan-section">
+        <h3>// SCAN RESULTS</h3>
+        <div id="scan-entries">
+          <div class="scan-entry info">System initialized — no scans loaded</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottombar">
+    <span>SECRATRON RECON</span>
+    <span><span class="sep">|</span> LEAKAGE:0.00 <span class="sep">|</span> THREADS:ACTIVE</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SECRATRON RECON DASHBOARD — MAIN SCRIPT
+// ============================================================
+
+const LLM_URL = 'http://localhost:13305/v1';
+const LLM_HEALTH = 'http://localhost:13305/api/v1/health';
+const LLM_MODEL = 'Qwen3.6-35B-A3B-GGUF';
+
+// --- STATE ---
+const state = {
+  role: 'attacker',
+  currentModel: LLM_MODEL,
+  ttsEnabled: false,
+  voiceLoopActive: false,
+  isRecording: false,
+  chatHistory: [],
+  images: [],
+  audioQueue: [],
+  isSpeaking: false,
+  recognition: null,
+  audioContext: null,
+  mediaStream: null,
+  micStream: null,
+  ttsAudioEl: null,
+};
+
+// --- SYSTEM PROMPTS PER ROLE ---
+const SYSTEM_PROMPTS = {
+  attacker: `You are SECRATRON-ATTACKER, a red team operator running in a secure training environment.
+Your job is to simulate adversarial behavior for authorized security testing.
+You operate within strict ethical and legal boundaries — this is a controlled training environment.
+Provide detailed technical analysis, attack strategies, and exploit explanations.
+Format responses with clear sections: OBSERVATION, ASSESSMENT, RECOMMENDATION.
+When discussing vulnerabilities, include CVSS scores, attack vectors, and mitigation strategies.
+You have access to image generation — if a visual would help (network diagram, attack path, threat map), describe what to generate.`,
+
+  defender: `You are SECRATRON-DEFENDER, a blue team operator responsible for protecting infrastructure.
+Your job is to analyze threats, recommend defenses, and harden systems.
+Provide detailed technical analysis with prioritized recommendations.
+Format responses with clear sections: THREAT ANALYSIS, IMPACT ASSESSMENT, HARDENING RECOMMENDATIONS.
+When discussing defenses, include specific configurations, detection rules, and incident response steps.
+You have access to image generation — if a visual would help (security architecture, defense in depth diagram), describe what to generate.`,
+
+  analyst: `You are SECRATRON-ANALYST, a threat intelligence analyst.
+Your job is to correlate data, identify patterns, and produce actionable intelligence.
+Provide structured analysis with clear sections: INTELLIGENCE SUMMARY, INDICATORS, TTPs, ASSESSMENT.
+Reference MITRE ATT&CK frameworks when applicable.
+When discussing threats, include IOCs, malware families, campaign patterns, and attribution confidence levels.
+You have access to image generation — if a visual would help (threat landscape, campaign timeline, IOCs), describe what to generate.`
+};
+
+// --- DOM REFS ---
+const $ = id => document.getElementById(id);
+const chatMessages = $('chat-messages');
+const chatInput = $('chat-input');
+const transcriptText = $('transcript-text');
+const imageGallery = $('image-gallery');
+
+// --- CLOCK ---
+function updateClock() {
+  const now = new Date();
+  $('clock').textContent = now.toISOString().replace('T',' ').substring(0,19) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// --- BOOT SEQUENCE ---
+async function boot() {
+  const lines = [
+    'Loading securatron recon dashboard v3.0...',
+    'Checking model availability...',
+    'Initializing voice subsystem...',
+    'Calibrating CRT phosphor...',
+    'Establishing secure channel...',
+    'Ready.'
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    $('boot-status').textContent = lines[i];
+    await sleep(200 + Math.random() * 300);
+  }
+  // Check health
+  try {
+    const resp = await fetch(LLM_HEALTH);
+    const data = await resp.json();
+    $('boot-status').textContent = `Models: ${data.all_models_loaded.map(m => m.model_name).join(', ')} | Status: OK`;
+  } catch(e) {
+    $('boot-status').textContent = 'WARNING: Backend connection failed';
+    $('boot-status').style.color = 'var(--red)';
+  }
+  await sleep(400);
+  $('loading-overlay').style.display = 'none';
+  $('app').style.display = 'grid';
+  addSystemMessage('SECRATRON RECON DASHBOARD v3.0 initialized.');
+  addSystemMessage(`Role: ATTACKER | Model: Qwen3.6-35B | Voice: ${state.ttsEnabled ? 'ON' : 'OFF'}`);
+}
+
+// --- UTILITY ---
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// --- CHAT ---
+function addMessage(role, text, extra = {}) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const labelClass = extra.labelClass || '';
+  div.innerHTML = `
+    <div class="label ${labelClass}">${extra.label || role.toUpperCase()}</div>
+    <div class="body">${escapeHtml(text)}</div>
+  `;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function addSystemMessage(text) {
+  addMessage('system', text, { label: 'SYSTEM' });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// --- LLM CHAT ---
+async function sendChat(text) {
+  if (!text.trim()) return;
+
+  // Add user message
+  addMessage('user', text, { label: 'OPERATOR' });
+  state.chatHistory.push({ role: 'user', content: text });
+
+  // Show thinking
+  const thinkingDiv = addMessage('system', 'Thinking', { label: 'PROCESSING', extraClass: 'thinking' });
+
+  try {
+    const resp = await fetch(`${LLM_URL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: state.currentModel,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPTS[state.role] },
+          ...state.chatHistory.slice(-30)
+        ],
+        max_tokens: 4096,
+        temperature: 0.7,
+        stream: false,
+        reasoning: false,
+        echo: false,
+        stop: ['</think>', '\n\n---', '\n\n#']
+      })
+    });
+
+    thinkingDiv.remove();
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      addMessage('system', `ERROR: ${err}`, { label: 'ERROR' });
+      return;
+    }
+
+    const data = await resp.json();
+    const reply = data.choices?.[0]?.message?.content || data.content || '';
+    // Qwen3.6 puts reasoning in reasoning_content, content may be empty
+    const reasoning = data.choices?.[0]?.message?.reasoning_content || '';
+    const finalReply = reply.trim() || reasoning.trim() || '[No response]';
+
+    // Extract potential image generation requests
+    const imageReq = extractImageRequest(finalReply);
+    if (imageReq) {
+      addMessage('system', `>>> IMAGE REQUEST: ${imageReq}`, { label: 'IMAGE PIPELINE' });
+      generateImage(imageReq);
+    }
+
+    addMessage(state.role, finalReply, { label: state.role.toUpperCase() });
+    state.chatHistory.push({ role: 'assistant', content: finalReply });
+
+    // TTS output
+    if (state.ttsEnabled) {
+      speakText(finalReply);
+    }
+  } catch(e) {
+    thinkingDiv.remove();
+    addMessage('system', `ERROR: ${e.message}`, { label: 'ERROR' });
+  }
+}
+
+function extractImageRequest(text) {
+  const patterns = [
+    /generate\s+an?\s+image\s+of?\s+(.+?)(?:\.|$)/i,
+    /generate\s+(?:a?\s+)?(?:recon|threat|attack|network|diagram|map)\s+(?:image\s+of?\s+)?(.+?)(?:\.|$)/i,
+    /create\s+an?\s+image\s+of?\s+(.+?)(?:\.|$)/i,
+    /visualize\s+(.+?)(?:\.|$)/i,
+    /render\s+(.+?)(?:\.|$)/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return m[1].trim();
+  }
+  // Check if the message explicitly mentions image generation
+  if (/image gen/i.test(text) && /image/i.test(text)) {
+    const m = text.match(/image\s+(?:of|for|showing|depicting)\s+(.+)/i);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+// --- IMAGE GENERATION ---
+async function generateImage(prompt) {
+  if (!prompt) return;
+
+  addMessage('system', `Generating image: "${prompt}"`, { label: 'FLUX-2' });
+
+  try {
+    const resp = await fetch(`${LLM_URL}/images/generations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'Flux-2-Klein-4B',
+        prompt: prompt,
+        size: '1024x1024',
+        steps: 20,
+        cfg_scale: 7.5
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      addMessage('system', `Image gen error: ${err}`, { label: 'ERROR' });
+      return;
+    }
+
+    const data = await resp.json();
+    const imgData = data.data?.[0]?.b64_json || data.output?.[0];
+
+    if (imgData) {
+      const imgSrc = `data:image/png;base64,${imgData}`;
+      state.images.push({ src: imgSrc, prompt: prompt, time: new Date().toISOString() });
+      renderImageEntry(imgSrc, prompt);
+      addMessage('system', `Image generated: "${prompt}"`, { label: 'FLUX-2', labelClass: 'analyst' });
+    } else {
+      addMessage('system', 'No image data in response', { label: 'ERROR' });
+    }
+  } catch(e) {
+    addMessage('system', `Image gen error: ${e.message}`, { label: 'ERROR' });
+  }
+}
+
+function renderImageEntry(src, prompt) {
+  const div = document.createElement('div');
+  div.className = 'image-entry';
+  div.innerHTML = `
+    <img src="${src}" alt="${escapeHtml(prompt)}" loading="lazy">
+    <div class="caption">${escapeHtml(prompt)}</div>
+  `;
+  imageGallery.prepend(div);
+}
+
+// --- TTS ---
+async function speakText(text) {
+  if (!state.ttsEnabled || state.isSpeaking) return;
+
+  // Clean text for speech (remove markdown, code blocks, etc.)
+  const cleanText = text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`]*`/g, '')
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/---/g, '')
+    .replace(/```/g, '')
+    .replace(/\n+/g, '. ')
+    .trim();
+
+  if (!cleanText) return;
+
+  state.isSpeaking = true;
+  $('voice-label').textContent = 'SPEAKING';
+  $('voice-dot').className = 'dot live';
+
+  try {
+    const resp = await fetch(`${LLM_URL}/audio/speech`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'kokoro-v1',
+        input: cleanText.substring(0, 4000),
+        voice: 'af',
+        speed: 1.0
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('TTS error:', err);
+      return;
+    }
+
+    const audioBlob = await resp.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Stop any currently playing audio
+    if (state.ttsAudioEl) {
+      state.ttsAudioEl.pause();
+      state.ttsAudioEl = null;
+    }
+
+    const audio = new Audio(audioUrl);
+    state.ttsAudioEl = audio;
+
+    audio.onended = () => {
+      state.isSpeaking = false;
+      if (state.voiceLoopActive && !state.isRecording) {
+        $('voice-label').textContent = 'LISTENING';
+        $('voice-dot').className = 'dot live';
+      } else {
+        $('voice-label').textContent = 'STANDBY';
+        $('voice-dot').className = 'dot';
+      }
+    };
+
+    await audio.play();
+  } catch(e) {
+    console.error('TTS error:', e);
+    state.isSpeaking = false;
+    $('voice-label').textContent = 'ERROR';
+    $('voice-dot').className = 'dot error';
+    setTimeout(() => {
+      $('voice-label').textContent = 'STANDBY';
+      $('voice-dot').className = 'dot';
+    }, 3000);
+  }
+}
+
+function stopTts() {
+  if (state.ttsAudioEl) {
+    state.ttsAudioEl.pause();
+    state.ttsAudioEl = null;
+  }
+  state.isSpeaking = false;
+  if (state.voiceLoopActive) {
+    $('voice-label').textContent = 'LISTENING';
+    $('voice-dot').className = 'dot live';
+  } else {
+    $('voice-label').textContent = 'STANDBY';
+    $('voice-dot').className = 'dot';
+  }
+}
+
+// --- VOICE INPUT (STT via Whisper) ---
+async function startVoiceInput() {
+  if (state.isRecording) {
+    stopVoiceInput();
+    return;
+  }
+
+  try {
+    state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Setup Web Speech API fallback first, with whisper as primary
+    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = state.audioContext.createMediaStreamSource(state.micStream);
+
+    // Record audio for Whisper
+    const mediaRecorder = new MediaRecorder(state.micStream);
+    const audioChunks = [];
+
+    state.isRecording = true;
+    $('btn-mic').className = 'btn recording';
+    $('mic-icon').textContent = '⊙';
+    $('voice-label').textContent = 'RECORDING';
+    $('voice-dot').className = 'dot live';
+    $('voice-dot').style.background = 'var(--red)';
+
+    transcriptText.textContent = 'Recording... Click MIC to stop.';
+
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      await transcribeAudio(audioBlob);
+    };
+
+    mediaRecorder.start();
+    state._mediaRecorder = mediaRecorder;
+
+    // Auto-stop after 10 seconds of silence detection or max 30 seconds
+    state._recordingTimer = setTimeout(() => {
+      if (state.isRecording) stopVoiceInput();
+    }, 30000);
+
+  } catch(e) {
+    addMessage('system', `Mic error: ${e.message}`, { label: 'ERROR' });
+    $('voice-label').textContent = 'ERROR';
+    $('voice-dot').className = 'dot error';
+  }
+}
+
+function stopVoiceInput() {
+  if (state._mediaRecorder && state._mediaRecorder.state !== 'inactive') {
+    state._mediaRecorder.stop();
+  }
+  if (state._recordingTimer) {
+    clearTimeout(state._recordingTimer);
+  }
+  if (state.micStream) {
+    state.micStream.getTracks().forEach(t => t.stop());
+    state.micStream = null;
+  }
+  state.isRecording = false;
+  $('btn-mic').className = 'btn';
+  $('mic-icon').textContent = '⊘';
+  if (state.voiceLoopActive) {
+    $('voice-label').textContent = 'LISTENING';
+  } else {
+    $('voice-label').textContent = 'STANDBY';
+  }
+  $('voice-dot').className = 'dot live';
+  $('voice-dot').style.background = '';
+}
+
+// Convert WebM audio blob to WAV format (16kHz, 16-bit mono) for Whisper
+function webmToWav(webmBlob) {
+  return new Promise((resolve, reject) => {
+    const audioContext = new AudioContext();
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(e.target.result);
+        // Resample to 16kHz for Whisper
+        const wavData = encodeWav(audioBuffer, 16000);
+        const wavBlob = new Blob([wavData], { type: 'audio/wav' });
+        resolve(wavBlob);
+      } catch(err) {
+        reject(err);
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Failed to read audio data'));
+    reader.readAsArrayBuffer(webmBlob);
+  });
+}
+
+// Encode AudioBuffer as WAV format with optional resampling
+function encodeWav(audioBuffer, targetSampleRate) {
+  targetSampleRate = targetSampleRate || audioBuffer.sampleRate;
+  const numChannels = 1; // Mono
+  const format = 1; // PCM
+  const bitDepth = 16;
+
+  // Resample if needed
+  let samples;
+  if (audioBuffer.sampleRate !== targetSampleRate) {
+    samples = resampleChannel(audioBuffer.getChannelData(0), audioBuffer.sampleRate, targetSampleRate);
+  } else {
+    samples = audioBuffer.getChannelData(0);
+  }
+
+  const dataLength = samples.length * (bitDepth / 8);
+  const headerLength = 44;
+  const totalLength = headerLength + dataLength;
+
+  const buffer = new ArrayBuffer(totalLength);
+  const view = new DataView(buffer);
+
+  // WAV header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, totalLength - 8, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+  view.setUint16(20, format, true); // AudioFormat (1 for PCM)
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, targetSampleRate, true);
+  view.setUint32(28, targetSampleRate * numChannels * (bitDepth / 8), true); // ByteRate
+  view.setUint16(32, numChannels * (bitDepth / 8), true); // BlockAlign
+  view.setUint16(34, bitDepth, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  // Write PCM samples
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const sample = Math.max(-1, Math.min(1, samples[i]));
+    const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+    view.setInt16(offset, intSample, true);
+    offset += 2;
+  }
+
+  return buffer;
+}
+
+// Simple linear resampling
+function resampleChannel(samples, fromRate, toRate) {
+  if (fromRate === toRate) return samples;
+  const ratio = toRate / fromRate;
+  const newLength = Math.round(samples.length * ratio);
+  const resampled = new Float32Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const srcIndex = i / ratio;
+    const idx = Math.floor(srcIndex);
+    const frac = srcIndex - idx;
+
+    if (idx + 1 < samples.length) {
+      resampled[i] = samples[idx] * (1 - frac) + samples[idx + 1] * frac;
+    } else {
+      resampled[i] = samples[idx] || 0;
+    }
+  }
+
+  return resampled;
+}
+
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+async function transcribeAudio(audioBlob) {
+  try {
+    transcriptText.textContent = 'Transcribing audio...';
+
+    // Convert WebM to WAV for Whisper
+    const wavBlob = await webmToWav(audioBlob);
+
+    const formData = new FormData();
+    formData.append('file', wavBlob, 'recording.wav');
+    formData.append('model', 'Whisper-Large-v3-Turbo');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
+
+    const resp = await fetch(`${LLM_URL}/audio/transcriptions`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      transcriptText.textContent = `Transcription error: ${err}`;
+      addMessage('system', `STT error: ${err}`, { label: 'STT' });
+      return;
+    }
+
+    const data = await resp.json();
+    const text = data.text || data.transcript || '';
+
+    if (text.trim()) {
+      transcriptText.textContent = `"${text}"`;
+      addMessage('user', text, { label: 'MIC', labelClass: 'stt' });
+      state.chatHistory.push({ role: 'user', content: text });
+
+      // Continue voice loop or send to LLM
+      if (state.voiceLoopActive) {
+        await processVoiceResponse(text);
+      } else {
+        await sendChat(text);
+      }
+    } else {
+      transcriptText.textContent = '(no speech detected)';
+    }
+  } catch(e) {
+    transcriptText.textContent = `Transcription failed: ${e.message}`;
+    addMessage('system', `STT error: ${e.message}`, { label: 'STT' });
+  }
+}
+
+async function processVoiceResponse(text) {
+  addMessage('system', 'Processing via LLM...', { label: 'PROCESSING' });
+
+  try {
+    const resp = await fetch(`${LLM_URL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: state.currentModel,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPTS[state.role] },
+          ...state.chatHistory.slice(-30),
+          { role: 'user', content: text }
+        ],
+        max_tokens: 2048,
+        temperature: 0.7,
+        stream: false
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      addMessage('system', `LLM error: ${err}`, { label: 'ERROR' });
+      return;
+    }
+
+    const data = await resp.json();
+    const reply = data.choices?.[0]?.message?.content || data.content || '';
+    // Qwen3.6 puts reasoning in reasoning_content, content may be empty
+    const reasoning = data.choices?.[0]?.message?.reasoning_content || '';
+    const finalReply = reply.trim() || reasoning.trim() || '[No response]';
+
+    // Extract image requests
+    const imageReq = extractImageRequest(finalReply);
+    if (imageReq) {
+      generateImage(imageReq);
+    }
+
+    addMessage(state.role, finalReply, { label: state.role.toUpperCase() });
+    state.chatHistory.push({ role: 'assistant', content: finalReply });
+
+    // TTS the response
+    if (state.ttsEnabled) {
+      await speakText(finalReply);
+    }
+
+  } catch(e) {
+    addMessage('system', `LLM error: ${e.message}`, { label: 'ERROR' });
+  }
+}
+
+// --- FULL VOICE LOOP ---
+function toggleVoiceLoop() {
+  state.voiceLoopActive = !state.voiceLoopActive;
+
+  if (state.voiceLoopActive) {
+    $('btn-voice-loop').className = 'btn active';
+    $('voice-label').textContent = 'LISTENING';
+    $('voice-dot').className = 'dot live';
+
+    // Auto-start listening
+    startVoiceInput();
+  } else {
+    $('btn-voice-loop').className = 'btn';
+    stopVoiceInput();
+    $('voice-label').textContent = 'STANDBY';
+    $('voice-dot').className = 'dot';
+  }
+}
+
+// --- SCAN RESULTS ---
+function loadScanResults(jsonData) {
+  try {
+    const data = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+    const entries = $('scan-entries');
+    entries.innerHTML = '';
+
+    const items = Array.isArray(data) ? data : (data.vulnerabilities || data.results || [data]);
+    items.forEach(item => {
+      const title = item.title || item.name || item.description || 'Unknown';
+      const severity = (item.severity || item.priority || item.risk || 'info').toLowerCase();
+      const detail = item.description || item.summary || item.detail || '';
+      const div = document.createElement('div');
+      div.className = `scan-entry ${severity}`;
+      div.textContent = `[${severity.toUpperCase()}] ${title}`;
+      if (detail) div.title = detail;
+      entries.appendChild(div);
+    });
+
+    addSystemMessage(`Loaded ${items.length} scan entries`);
+  } catch(e) {
+    addSystemMessage(`Failed to parse scan data: ${e.message}`);
+  }
+}
+
+// --- ROLE SWITCHING ---
+function setRole(role) {
+  state.role = role;
+  document.querySelectorAll('#role-selector button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.role === role);
+  });
+  addSystemMessage(`Role switched to: ${role.toUpperCase()}`);
+  addSystemMessage(`System prompt: ${SYSTEM_PROMPTS[role].substring(0, 80)}...`);
+}
+
+// --- KEYBOARD ---
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat(chatInput.value);
+    chatInput.value = '';
+  }
+});
+
+// --- BUTTON HANDLERS ---
+$('btn-send').addEventListener('click', () => {
+  sendChat(chatInput.value);
+  chatInput.value = '';
+});
+
+$('btn-mic').addEventListener('click', startVoiceInput);
+$('btn-tts-toggle').addEventListener('click', () => {
+  state.ttsEnabled = !state.ttsEnabled;
+  $('btn-tts-toggle').classList.toggle('active', state.ttsEnabled);
+  $('tts-icon').textContent = state.ttsEnabled ? '♫' : '♪';
+  addSystemMessage(`TTS output: ${state.ttsEnabled ? 'ENABLED' : 'DISABLED'}`);
+});
+
+$('btn-stop-tts').addEventListener('click', stopTts);
+$('btn-voice-loop').addEventListener('click', toggleVoiceLoop);
+$('btn-clear').addEventListener('click', () => {
+  chatMessages.innerHTML = '';
+  state.chatHistory = [];
+  addSystemMessage('Chat cleared.');
+});
+
+$('btn-gen-img').addEventListener('click', () => {
+  const prompt = $('image-prompt').value;
+  if (prompt) {
+    generateImage(prompt);
+    $('image-prompt').value = '';
+  }
+});
+
+$('image-prompt').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const prompt = $('image-prompt').value;
+    if (prompt) {
+      generateImage(prompt);
+      $('image-prompt').value = '';
+    }
+  }
+});
+
+document.querySelectorAll('#role-selector button').forEach(btn => {
+  btn.addEventListener('click', () => setRole(btn.dataset.role));
+});
+
+// --- INIT ---
+boot();
+</script>
+</body>
+</html>

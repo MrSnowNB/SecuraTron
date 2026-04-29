@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURATRON // Security Operations Center</title>
+    <style>
+        /* ============================================
+           SECURATRON SECURITY OPERATIONS CENTER v2.0
+           First Principles Architecture
+           ============================================ */
+        
+        :root {
+            --primary: #00ff41;
+            --primary-dim: #00aa2a;
+            --secondary: #0088ff;
+            --warning: #ffaa00;
+            --danger: #ff4444;
+            --bg: #0a0a0a;
+            --panel-bg: rgba(0, 20, 0, 0.9);
+            --border: #00ff4133;
+            --text: #00ff41;
+            --text-dim: #00aa2a88;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* CRT Effect */
+        .crt::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                var(--scanline),
+                var(--scanline) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        .crt::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+        
+        /* Boot Screen */
+        #boot-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+        }
+        
+        #boot-screen.hidden { opacity: 0; pointer-events: none; }
+        
+        #boot-text {
+            font-size: 14px;
+            line-height: 1.8;
+            max-width: 600px;
+            text-align: left;
+        }
+        
+        #boot-text .line { opacity: 0; animation: fadeIn 0.1s forwards; }
+        
+        @keyframes fadeIn { to { opacity: 1; } }
+        
+        /* Layout */
+        .soc-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 300px;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            gap: 2px;
+            background: var(--border);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .soc-container.visible { opacity: 1; }
+        
+        /* Header */
+        .soc-header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .soc-header .title { font-size: 14px; font-weight: bold; letter-spacing: 2px; }
+        
+        .soc-header .status { display: flex; gap: 20px; }
+        
+        .soc-header .status-item { display: flex; align-items: center; gap: 5px; }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.warning { background: var(--warning); }
+        .status-dot.danger { background: var(--danger); }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Panels */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            overflow-y: auto;
+        }
+        
+        .panel-header {
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+        }
+        
+        /* Sidebar */
+        .sidebar { grid-row: 2 / 3; }
+        
+        .model-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+        
+        .model-item .label { color: var(--text-dim); }
+        .model-item .value { color: var(--primary); }
+        
+        .persona-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: left;
+        }
+        
+        .persona-btn:hover, .persona-btn.active {
+            background: rgba(0, 255, 65, 0.1);
+            border-color: var(--primary);
+        }
+        
+        /* Main Content */
+        .main-content { grid-row: 2 / 3; display: flex; flex-direction: column; }
+        
+        .terminal {
+            flex: 1;
+            background: rgba(0, 10, 0, 0.8);
+            border: 1px solid var(--border);
+            padding: 12px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .terminal .line { margin-bottom: 2px; }
+        .terminal .line.system { color: var(--text-dim); }
+        .terminal .line.error { color: var(--danger); }
+        .terminal .line.success { color: var(--primary); }
+        .terminal .line.warning { color: var(--warning); }
+        .terminal .line.user { color: var(--secondary); }
+        .terminal .line.threat { color: var(--danger); font-weight: bold; }
+        
+        /* Input Area */
+        .input-area {
+            background: var(--panel-bg);
+            border-top: 1px solid var(--border);
+            padding: 10px;
+        }
+        
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        .input-field {
+            flex: 1;
+            background: rgba(0, 10, 0, 0.8);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+        
+        .input-field:focus { border-color: var(--primary); }
+        
+        .btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover { background: rgba(0, 255, 65, 0.1); border-color: var(--primary); }
+        .btn.primary { background: rgba(0, 255, 65, 0.2); border-color: var(--primary); }
+        .btn.danger { border-color: var(--danger); color: var(--danger); }
+        .btn.danger:hover { background: rgba(255, 68, 68, 0.1); }
+        .btn.recording { animation: pulse 1s infinite; border-color: var(--danger); color: var(--danger); }
+        
+        /* Right Panel */
+        .right-panel { grid-row: 2 / 3; }
+        
+        .threat-item {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+        }
+        
+        .threat-severity {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .threat-severity.critical { background: var(--danger); }
+        .threat-severity.high { background: var(--warning); }
+        .threat-severity.medium { background: var(--secondary); }
+        .threat-severity.low { background: var(--primary); }
+        
+        .image-preview { margin-top: 10px; }
+        .image-preview img { width: 100%; border: 1px solid var(--border); }
+        
+        /* Footer */
+        .soc-footer {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            padding: 6px 16px;
+            font-size: 10px;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-dim); }
+        
+        /* Typing cursor */
+        .typing {
+            display: inline-block;
+            width: 10px;
+            height: 15px;
+            background: var(--primary);
+            animation: blink 0.5s infinite;
+        }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        
+        /* Network Canvas */
+        #network-canvas {
+            width: 100%;
+            height: 200px;
+            border: 1px solid var(--border);
+            margin-top: 10px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .soc-container { grid-template-columns: 200px 1fr 200px; }
+        }
+        
+        @media (max-width: 900px) {
+            .soc-container { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto auto; }
+            .sidebar, .right-panel { grid-row: auto; }
+        }
+    </style>
+</head>
+<body class="crt">
+    <!-- Boot Screen -->
+    <div id="boot-screen">
+        <div id="boot-text"></div>
+    </div>
+    
+    <!-- Main SOC -->
+    <div class="soc-container" id="soc-container">
+        <!-- Header -->
+        <header class="soc-header">
+            <div class="title">[ SECURATRON // SECURITY OPERATIONS CENTER ]</div>
+            <div class="status">
+                <div class="status-item"><span class="status-dot"></span><span>SYSTEM ACTIVE</span></div>
+                <div class="status-item"><span id="model-count">4/4 MODELS</span></div>
+                <div class="status-item"><span id="uptime">UPTIME: 00:00:00</span></div>
+            </div>
+        </header>
+        
+        <!-- Left Sidebar -->
+        <aside class="panel sidebar">
+            <div class="panel-header">MODELS</div>
+            <div class="model-status">
+                <div class="model-item"><span class="label">LLM:</span><span class="value" id="llm-status">Qwen3.6-35B</span></div>
+                <div class="model-item"><span class="label">Image:</span><span class="value" id="image-status">Flux-2-Klein</span></div>
+                <div class="model-item"><span class="label">STT:</span><span class="value" id="stt-status">Whisper-L3</span></div>
+                <div class="model-item"><span class="label">TTS:</span><span class="value" id="tts-status">Kokoro-v1</span></div>
+            </div>
+            
+            <div class="panel-header">PERSONA</div>
+            <button class="persona-btn active" data-persona="analyst">[A] Analyst — Threat Analysis</button>
+            <button class="persona-btn" data-persona="operator">[O] Operator — Active Recon</button>
+            <button class="persona-btn" data-persona="commander">[C] Commander — Strategic Overview</button>
+            
+             <div class="panel-header">QUICK ACTIONS</div>
+            <div style="display: grid; gap: 5px;">
+                <button class="btn" onclick="analyzeThreats()">ANALYZE THREATS</button>
+                <button class="btn" onclick="generateNetworkMap()">NETWORK MAP</button>
+                <button class="btn" onclick="scanVulnerabilities()">SCAN VULNS</button>
+                <button class="btn" onclick="generateReport()">GENERATE REPORT</button>
+                <button class="btn" onclick="SessionManager.create()">NEW SESSION</button>
+                <button class="btn" onclick="SessionManager.exportHTML()">EXPORT REPORT</button>
+                <button class="btn danger" onclick="clearTerminal()">CLEAR TERMINAL</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="panel terminal" id="terminal">
+                <div class="line system">[INIT] SECURATRON Security Operations Center v2.0</div>
+                <div class="line system">[INIT] First Principles Architecture — All systems nominal</div>
+                <div class="line system">[INIT] Models: LLM(GPU) | Image(GPU) | STT(GPU) | TTS(CPU)</div>
+                <div class="line system">[INIT] Voice input enabled — Click microphone to begin</div>
+                <div class="line system">[INIT] Type a command or select a persona above</div>
+                <div class="line">&nbsp;</div>
+            </div>
+            
+            <div class="input-area">
+                <div class="input-row">
+                    <input type="text" class="input-field" id="command-input" placeholder="Enter command..." autofocus>
+                    <button class="btn primary" onclick="executeCommand()">EXECUTE</button>
+                    <button class="btn" id="mic-btn" onclick="toggleVoiceInput()">🎤 VOICE</button>
+                </div>
+                <div style="display: flex; gap: 10px; font-size: 10px; color: var(--text-dim);">
+                    <span>KEYBOARD SHORTCUTS:</span>
+                    <span>[Ctrl+Enter] Execute</span>
+                    <span>[Ctrl+M] Voice</span>
+                    <span>[Ctrl+C] Clear</span>
+                    <span>[Ctrl+A] Analyze</span>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Right Panel -->
+        <aside class="panel right-panel">
+            <div class="panel-header">THREAT INTELLIGENCE</div>
+            <div class="threat-list" id="threat-list">
+                <div class="threat-item"><span class="threat-severity medium"></span><span>Port scan detected — 192.168.1.0/24</span></div>
+                <div class="threat-item"><span class="threat-severity low"></span><span>Unusual DNS queries — internal network</span></div>
+                <div class="threat-item"><span class="threat-severity high"></span><span>Failed auth attempts — 10.0.0.5</span></div>
+            </div>
+            
+            <div class="panel-header">NETWORK VISUALIZATION</div>
+            <canvas id="network-canvas"></canvas>
+            
+            <div class="panel-header">VISUALIZATION</div>
+            <div class="image-preview" id="image-preview">
+                <div class="line system">[IMAGE] Awaiting request...</div>
+            </div>
+        </aside>
+        
+      <!-- Footer -->
+        <footer class="soc-footer">
+            <span>SECURATRON v2.0 // EXPERIMENTAL BUILD</span>
+            <span id="current-time"></span>
+            <span id="ws-status" style="color:var(--text-dim);">WS: DISCONNECTED</span>
+            <span id="model-count">4/4 MODELS</span>
+        </footer>
+    </div>
+    
+    <script>
+        // ============================================
+        // SECURATRON SECURITY OPERATIONS CENTER v2.0
+        // First Principles Architecture
+        // ============================================
+        
+        const CONFIG = {
+            LLM_URL: 'http://localhost:13305',
+            CURRENT_PERSONA: 'analyst',
+            IS_RECORDING: false,
+            MEDIA_RECORDER: null,
+            AUDIO_CHUNKS: [],
+            START_TIME: Date.now(),
+            MODEL_SWAP_COUNT: 0,
+            PERSONAS: {
+                analyst: {
+                    name: 'Analyst',
+                    system_prompt: 'You are a security analyst. Your task is to analyze threats, identify vulnerabilities, and provide actionable intelligence. Be concise, technical, and precise.'
+                },
+                operator: {
+                    name: 'Operator',
+                    system_prompt: 'You are a security operator. Your task is to assist with active reconnaissance, vulnerability scanning, and penetration testing. Provide step-by-step instructions and command examples.'
+                },
+                commander: {
+                    name: 'Commander',
+                    system_prompt: 'You are a security commander. Your task is to provide strategic oversight, risk assessments, and high-level recommendations. Focus on business impact and prioritization.'
+                }
+            }
+        };
+        
+        // DOM helpers
+        const $ = (id) => document.getElementById(id);
+        const terminal = $('terminal');
+        const commandInput = $('command-input');
+        const micBtn = $('mic-btn');
+        
+        // Boot sequence
+        function bootSequence() {
+            const bootLines = [
+                '[BOOT] SECURATRON Security Operations Center v2.0',
+                '[BOOT] Initializing First Principles Architecture...',
+                '[BOOT] Loading models: LLM(GPU), Image(GPU), STT(GPU), TTS(CPU)',
+                '[BOOT] Voice input: ENABLED',
+                '[BOOT] Network visualization: ACTIVE',
+                '[BOOT] Threat feed: ACTIVE',
+                '[BOOT] All systems nominal.',
+                '[BOOT] Ready.'
+            ];
+            
+            const bootText = $('boot-text');
+            let i = 0;
+            
+            function showNext() {
+                if (i < bootLines.length) {
+                    const line = document.createElement('div');
+                    line.className = 'line';
+                    line.textContent = bootLines[i];
+                    bootText.appendChild(line);
+                    i++;
+                    setTimeout(showNext, 200);
+                } else {
+                    setTimeout(() => {
+                        $('boot-screen').classList.add('hidden');
+                        $('soc-container').classList.add('visible');
+                        init();
+                    }, 500);
+                }
+            }
+            
+            showNext();
+        }
+        
+       // Initialize
+        function init() {
+            updateUptime();
+            setInterval(updateUptime, 1000);
+            setInterval(updateTime, 1000);
+            updateTime();
+            loadModelStatus();
+            setupKeyboardShortcuts();
+            setupPersonaSwitching();
+            startThreatFeed();
+            drawNetworkVisualization();
+            connectWebSocket(); // Start WebSocket client
+            addLine('system', '[READY] System initialized. Awaiting input.');
+        }
+        
+        // Uptime counter
+        function updateUptime() {
+            const elapsed = Date.now() - CONFIG.START_TIME;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            $('uptime').textContent = `UPTIME: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Current time
+        function updateTime() {
+            const now = new Date();
+            $('current-time').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        
+        // Add line to terminal
+        function addLine(type, text) {
+            const line = document.createElement('div');
+            line.className = `line ${type}`;
+            line.textContent = text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        // Stream text to terminal
+        async function streamText(text) {
+            const line = document.createElement('div');
+            line.className = 'line';
+            terminal.appendChild(line);
+            
+            for (let i = 0; i < text.length; i++) {
+                line.textContent += text[i];
+                terminal.scrollTop = terminal.scrollHeight;
+                await new Promise(r => setTimeout(r, 5));
+            }
+        }
+        
+        // Load model status
+        async function loadModelStatus() {
+            try {
+                const resp = await fetch(`${CONFIG.LLM_URL}/api/v1/health`);
+                const data = await resp.json();
+                
+                const models = data.all_models_loaded || [];
+                const modelMap = {};
+                models.forEach(m => { modelMap[m.type] = m.model_name || m.name; });
+                
+                $('llm-status').textContent = modelMap.llm || 'NOT LOADED';
+                $('image-status').textContent = modelMap.image || 'NOT LOADED';
+                $('stt-status').textContent = modelMap.audio || 'NOT LOADED';
+                $('tts-status').textContent = modelMap.tts || 'NOT LOADED';
+                
+                const loaded = Object.keys(modelMap).length;
+                $('model-count').textContent = `${loaded}/4 MODELS`;
+                
+                if (loaded < 4) { $('model-count').classList.add('warning'); }
+            } catch (e) { addLine('error', `[ERROR] Failed to load model status: ${e.message}`); }
+        }
+        
+        // Keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); executeCommand(); }
+                else if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleVoiceInput(); }
+                else if (e.ctrlKey && e.key === 'c') { e.preventDefault(); clearTerminal(); }
+                else if (e.ctrlKey && e.key === 'a') { e.preventDefault(); analyzeThreats(); }
+            });
+            
+            commandInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') executeCommand(); });
+        }
+        
+        // Persona switching
+        function setupPersonaSwitching() {
+            document.querySelectorAll('.persona-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    CONFIG.CURRENT_PERSONA = btn.dataset.persona;
+                    addLine('system', `[PERSONA] Switched to ${CONFIG.PERSONAS[btn.dataset.persona].name}`);
+                });
+            });
+        }
+        
+        // Execute command
+        async function executeCommand() {
+            const command = commandInput.value.trim();
+            if (!command) return;
+            
+            commandInput.value = '';
+            addLine('user', `> ${command}`);
+            
+            const persona = CONFIG.PERSONAS[CONFIG.CURRENT_PERSONA];
+            addLine('system', `[${persona.name}] Processing...`);
+            
+            try {
+                const response = await callLLM(command);
+                addLine('success', response);
+            } catch (e) { addLine('error', `[ERROR] ${e.message}`); }
+        }
+        
+      // Call LLM
+        async function callLLM(message) {
+            const persona = CONFIG.PERSONAS[CONFIG.CURRENT_PERSONA];
+            
+            const response = await fetch(`${CONFIG.LLM_URL}/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'Qwen3.6-35B-A3B-GGUF',
+                    messages: [
+                        { role: 'system', content: persona.system_prompt },
+                        { role: 'user', content: message }
+                    ],
+                    max_tokens: 2048,
+                    temperature: 0.7,
+                    stream: false
+                })
+            });
+            
+            if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
+            
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || 'No response';
+        }
+        
+        // ============================================
+        // WebSocket Stream Client (v2.0 addition)
+        // ============================================
+        let ws = null;
+        let wsReconnectTimer = null;
+        
+        function connectWebSocket() {
+            if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+            
+            ws = new WebSocket('ws://localhost:9999/stream');
+            
+            ws.onopen = () => {
+                addLine('system', '[WS] Connected to stream server');
+                $('ws-status').textContent = 'WS: CONNECTED';
+                $('ws-status').style.color = 'var(--primary)';
+                clearTimeout(wsReconnectTimer);
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    handleWsMessage(msg);
+                } catch (e) { addLine('error', `[WS] Parse error: ${e.message}`); }
+            };
+            
+            ws.onclose = () => {
+                addLine('system', '[WS] Disconnected. Reconnecting...');
+                $('ws-status').textContent = 'WS: DISCONNECTED';
+                $('ws-status').style.color = 'var(--text-dim)';
+                wsReconnectTimer = setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (e) => {
+                addLine('error', '[WS] Error (streaming unavailable, using HTTP fallback)');
+                $('ws-status').textContent = 'WS: ERROR';
+                $('ws-status').style.color = 'var(--danger)';
+            };
+        }
+        
+        function handleWsMessage(msg) {
+            if (msg.type === 'started') {
+                addLine('system', msg.data);
+            } else if (msg.type === 'token') {
+                // Stream token to terminal
+                if (!window._wsCurrentLine) {
+                    window._wsCurrentLine = document.createElement('div');
+                    window._wsCurrentLine.className = 'line';
+                    terminal.appendChild(window._wsCurrentLine);
+                }
+                window._wsCurrentLine.textContent += msg.data;
+                terminal.scrollTop = terminal.scrollHeight;
+            } else if (msg.type === 'done') {
+                window._wsCurrentLine = null;
+                addLine('success', '[COMPLETE] Response received');
+            } else if (msg.type === 'error') {
+                addLine('error', msg.data);
+                window._wsCurrentLine = null;
+            } else if (msg.type === 'image') {
+                if (msg.data) {
+                    $('image-preview').innerHTML = `<img src="${msg.data}" alt="Generated image" style="max-width:100%;border:1px solid var(--border);">`;
+                    addLine('success', '[IMAGE] Generated successfully');
+                }
+            } else if (msg.type === 'status') {
+                addLine('system', `[STATUS] ${JSON.stringify(msg.data)}`);
+            }
+        }
+        
+        // Execute via WebSocket (real-time streaming)
+        async function executeCommandWS() {
+            const command = commandInput.value.trim();
+            if (!command) return;
+            
+            commandInput.value = '';
+            addLine('user', `> ${command}`);
+            addLine('system', '[WS] Streaming via WebSocket...');
+            window._wsCurrentLine = null;
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'chat', message: command }));
+            } else {
+                // Fallback to HTTP
+                addLine('system', '[WS] WebSocket unavailable, using HTTP fallback...');
+                const persona = CONFIG.PERSONAS[CONFIG.CURRENT_PERSONA];
+                const response = await callLLM(command);
+                addLine('success', response);
+            }
+        }
+        
+        // Call LLM with streaming fallback
+        async function callLLMWithFallback(message) {
+            // Try WebSocket first
+            connectWebSocket();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                return new Promise((resolve, reject) => {
+                    let fullResponse = '';
+                    const timeout = setTimeout(() => {
+                        // Fallback to HTTP
+                        resolve(callLLM(message));
+                    }, 5000);
+                    
+                    ws.send(JSON.stringify({ type: 'chat', message: message }));
+                    
+                    const handler = (event) => {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'token') fullResponse += msg.data;
+                        else if (msg.type === 'done') {
+                            clearTimeout(timeout);
+                            ws.removeEventListener('message', handler);
+                            resolve(fullResponse);
+                        }
+                        else if (msg.type === 'error') {
+                            clearTimeout(timeout);
+                            ws.removeEventListener('message', handler);
+                            reject(new Error(msg.data));
+                        }
+                    };
+                    
+                    ws.addEventListener('message', handler);
+                });
+            }
+            // No WebSocket, use HTTP
+            return callLLM(message);
+        }
+        
+        // Voice input
+        async function toggleVoiceInput() {
+            if (CONFIG.IS_RECORDING) { stopVoiceInput(); }
+            else { startVoiceInput(); }
+        }
+        
+        async function startVoiceInput() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                CONFIG.MEDIA_RECORDER = new MediaRecorder(stream);
+                CONFIG.AUDIO_CHUNKS = [];
+                CONFIG.IS_RECORDING = true;
+                
+                CONFIG.MEDIA_RECORDER.ondataavailable = (e) => { CONFIG.AUDIO_CHUNKS.push(e.data); };
+                
+                CONFIG.MEDIA_RECORDER.onstop = async () => {
+                    const audioBlob = new Blob(CONFIG.AUDIO_CHUNKS, { type: 'audio/webm' });
+                    await transcribeAudio(audioBlob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                
+                CONFIG.MEDIA_RECORDER.start();
+                micBtn.classList.add('recording');
+                micBtn.textContent = '⏹ STOP';
+                addLine('system', '[AUDIO] Recording...');
+            } catch (e) { addLine('error', `[AUDIO ERROR] ${e.message}`); }
+        }
+        
+        function stopVoiceInput() {
+            if (CONFIG.MEDIA_RECORDER && CONFIG.MEDIA_RECORDER.state !== 'inactive') { CONFIG.MEDIA_RECORDER.stop(); }
+            CONFIG.IS_RECORDING = false;
+            micBtn.classList.remove('recording');
+            micBtn.textContent = '🎤 VOICE';
+            addLine('system', '[AUDIO] Stopped recording.');
+        }
+        
+        // Transcribe audio
+        async function transcribeAudio(audioBlob) {
+            addLine('system', '[AUDIO] Transcribing...');
+            
+            try {
+                const wavBlob = await webmToWav(audioBlob);
+                const formData = new FormData();
+                formData.append('file', wavBlob, 'recording.wav');
+                formData.append('model', 'Whisper-Large-v3-Turbo');
+                formData.append('language', 'en');
+                
+                const resp = await fetch(`${CONFIG.LLM_URL}/v1/audio/transcriptions`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await resp.json();
+                const text = data.text?.trim() || '';
+                
+                if (text) {
+                    addLine('user', `> [VOICE] ${text}`);
+                    commandInput.value = text;
+                    executeCommand();
+                } else { addLine('warning', '[AUDIO] No speech detected.'); }
+            } catch (e) { addLine('error', `[AUDIO ERROR] ${e.message}`); }
+        }
+        
+        // WebM to WAV conversion
+        async function webmToWav(webmBlob) {
+            return new Promise((resolve, reject) => {
+                const audioContext = new AudioContext();
+                const reader = new FileReader();
+                
+                reader.onload = async (e) => {
+                    try {
+                        const audioBuffer = await audioContext.decodeAudioData(e.target.result);
+                        const wavData = encodeWav(audioBuffer, 16000);
+                        const wavBlob = new Blob([wavData], { type: 'audio/wav' });
+                        resolve(wavBlob);
+                    } catch (err) { reject(err); }
+                };
+                
+                reader.onerror = () => reject(new Error('Failed to read audio data'));
+                reader.readAsArrayBuffer(webmBlob);
+            });
+        }
+        
+        // Encode WAV
+        function encodeWav(audioBuffer, targetSampleRate) {
+            targetSampleRate = targetSampleRate || audioBuffer.sampleRate;
+            const numChannels = 1;
+            const format = 1;
+            const bitDepth = 16;
+            
+            let samples;
+            if (audioBuffer.sampleRate !== targetSampleRate) {
+                samples = resampleChannel(audioBuffer.getChannelData(0), audioBuffer.sampleRate, targetSampleRate);
+            } else { samples = audioBuffer.getChannelData(0); }
+            
+            const dataLength = samples.length * (bitDepth / 8);
+            const headerLength = 44;
+            const totalLength = headerLength + dataLength;
+            
+            const buffer = new ArrayBuffer(totalLength);
+            const view = new DataView(buffer);
+            
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, totalLength - 8, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, targetSampleRate, true);
+            view.setUint32(28, targetSampleRate * numChannels * (bitDepth / 8), true);
+            view.setUint16(32, numChannels * (bitDepth / 8), true);
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataLength, true);
+            
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++) {
+                const sample = Math.max(-1, Math.min(1, samples[i]));
+                const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(offset, intSample, true);
+                offset += 2;
+            }
+            
+            return buffer;
+        }
+        
+        // Resample channel
+        function resampleChannel(samples, fromRate, toRate) {
+            if (fromRate === toRate) return samples;
+            const ratio = toRate / fromRate;
+            const newLength = Math.round(samples.length * ratio);
+            const resampled = new Float32Array(newLength);
+            
+            for (let i = 0; i < newLength; i++) {
+                const srcIndex = i / ratio;
+                const idx = Math.floor(srcIndex);
+                const frac = srcIndex - idx;
+                
+                if (idx + 1 < samples.length) {
+                    resampled[i] = samples[idx] * (1 - frac) + samples[idx + 1] * frac;
+                } else { resampled[i] = samples[idx] || 0; }
+            }
+            
+            return resampled;
+        }
+        
+        // Write string to DataView
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) { view.setUint8(offset + i, string.charCodeAt(i)); }
+        }
+        
+        // TTS output
+        async function speakText(text) {
+            try {
+                const response = await fetch(`${CONFIG.LLM_URL}/v1/audio/speech`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'kokoro-v1',
+                        input: text,
+                        voice: 'af_bella',
+                        speed: 1.0
+                    })
+                });
+                
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audio = new Audio(URL.createObjectURL(audioBlob));
+                    audio.play();
+                    addLine('system', '[TTS] Audio playback started.');
+                }
+            } catch (e) { addLine('error', `[TTS ERROR] ${e.message}`); }
+        }
+        
+        // Quick actions
+        async function analyzeThreats() {
+            addLine('system', '[ANALYZE] Running threat analysis...');
+            const response = await callLLM('Analyze the current threat landscape and provide a summary of the top 5 threats.');
+            addLine('success', response);
+            speakText(response.substring(0, 200));
+        }
+        
+        async function generateNetworkMap() {
+            addLine('system', '[IMAGE] Generating network map...');
+            try {
+                const response = await fetch(`${CONFIG.LLM_URL}/v1/images/generations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'Flux-2-Klein-4B',
+                        prompt: 'Network security diagram showing attack surface, firewalls, IDS, and network segments. Technical style, dark background, green lines.',
+                        n: 1,
+                        size: '1024x1024'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.data && data.data[0]) {
+                    const imgSrc = data.data[0].url || data.data[0].b64_json;
+                    if (imgSrc) {
+                        const img = document.createElement('img');
+                        img.src = `data:image/png;base64,${imgSrc}`;
+                        $('image-preview').innerHTML = '';
+                        $('image-preview').appendChild(img);
+                        addLine('success', '[IMAGE] Network map generated.');
+                    }
+                }
+            } catch (e) { addLine('error', `[IMAGE ERROR] ${e.message}`); }
+        }
+        
+        async function scanVulnerabilities() {
+            addLine('system', '[SCAN] Scanning for vulnerabilities...');
+            const response = await callLLM('What are the most common vulnerabilities in modern web applications and how to mitigate them?');
+            addLine('success', response);
+        }
+        
+        async function generateReport() {
+            addLine('system', '[REPORT] Generating security report...');
+            const response = await callLLM('Generate a comprehensive security assessment report including executive summary, findings, and recommendations.');
+            addLine('success', response);
+        }
+        
+        function clearTerminal() { terminal.innerHTML = '<div class="line system">[CLEAR] Terminal cleared.</div>'; }
+        
+         // Simulated threat feed
+        function startThreatFeed() {
+            const threats = [
+                { severity: 'medium', text: 'Port scan detected — 192.168.1.0/24' },
+                { severity: 'low', text: 'Unusual DNS queries — internal network' },
+                { severity: 'high', text: 'Failed auth attempts — 10.0.0.5' },
+                { severity: 'critical', text: 'SQL injection attempt — /login.php' },
+                { severity: 'medium', text: 'SSL certificate expiring in 7 days' },
+                { severity: 'low', text: 'New device connected — 192.168.1.105' },
+                { severity: 'high', text: 'Brute force attack — SSH on 10.0.0.1' },
+                { severity: 'medium', text: 'Unauthorized API access — /admin' },
+            ];
+            
+            let i = 0;
+            setInterval(() => {
+                const threat = threats[i % threats.length];
+                const threatList = $('threat-list');
+                const item = document.createElement('div');
+                item.className = 'threat-item';
+                item.innerHTML = `<span class="threat-severity ${threat.severity}"></span><span>${threat.text}</span>`;
+                threatList.insertBefore(item, threatList.firstChild);
+                
+                // Keep only 10 items
+                while (threatList.children.length > 10) {
+                    threatList.removeChild(threatList.lastChild);
+                }
+                
+                addLine('threat', `[THREAT] ${threat.text}`);
+                i++;
+            }, 15000);
+        }
+        
+        // Session management
+        const SessionManager = {
+            sessions: JSON.parse(localStorage.getItem('securatron_sessions') || '[]'),
+            
+            create(name) {
+                const session = {
+                    id: Date.now().toString(),
+                    name: name || `Session ${this.sessions.length + 1}`,
+                    created: new Date().toISOString(),
+                    logs: [],
+                    persona: CONFIG.CURRENT_PERSONA
+                };
+                this.sessions.push(session);
+                this.save();
+                this.current = session;
+                addLine('system', `[SESSION] Created: ${session.name}`);
+                return session;
+            },
+            
+            save() {
+                localStorage.setItem('securatron_sessions', JSON.stringify(this.sessions));
+            },
+            
+            load(id) {
+                this.current = this.sessions.find(s => s.id === id);
+                if (this.current) {
+                    addLine('system', `[SESSION] Loaded: ${this.current.name}`);
+                    // Restore logs
+                    terminal.innerHTML = '';
+                    this.current.logs.forEach(line => addLine(line.type, line.text));
+                }
+            },
+            
+            addLog(type, text) {
+                if (this.current) {
+                    this.current.logs.push({ type, text });
+                    this.save();
+                }
+            },
+            
+            exportHTML() {
+                if (!this.current) return;
+                const html = `<!DOCTYPE html><html><head><title>Securatron Report</title>
+<style>body{background:#0a0a0a;color:#00ff41;font-family:monospace;padding:20px;}
+.line{margin:5px 0;}.system{color:#00aa2a88;}.success{color:#00ff41;}.error{color:#ff4444;}.user{color:#0088ff;}.threat{color:#ff4444;font-weight:bold;}</style></head>
+<body><h1>Securatron Analysis Report</h1><p>Session: ${this.current.name}</p><p>Created: ${this.current.created}</p>
+${this.current.logs.map(l => `<div class="line ${l.type}">${l.text}</div>`).join('')}</body></html>`;
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `securatron-report-${this.current.id}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+                addLine('system', '[SESSION] Report exported.');
+            },
+            
+            list() {
+                if (this.sessions.length === 0) {
+                    addLine('system', '[SESSION] No sessions saved.');
+                    return;
+                }
+                addLine('system', '[SESSION] Saved sessions:');
+                this.sessions.forEach(s => {
+                    addLine('system', `  ${s.id} — ${s.name} (${s.logs.length} entries) — ${s.created}`);
+                });
+            }
+        };
+        
+        // Hook into addLine to save session logs
+        const originalAddLine = addLine;
+        addLine = function(type, text) {
+            originalAddLine(type, text);
+            SessionManager.addLog(type, text);
+        };
+        
+        // Network visualization (simple canvas)
+        function drawNetworkVisualization() {
+            const canvas = $('network-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Draw network nodes
+            const nodes = [
+                { x: canvas.width / 2, y: canvas.height / 2, label: 'CORE', color: '#00ff41' },
+                { x: canvas.width / 4, y: canvas.height / 4, label: 'FW', color: '#ffaa00' },
+                { x: canvas.width * 3 / 4, y: canvas.height / 4, label: 'IDS', color: '#ff4444' },
+                { x: canvas.width / 4, y: canvas.height * 3 / 4, label: 'WEB', color: '#0088ff' },
+                { x: canvas.width * 3 / 4, y: canvas.height * 3 / 4, label: 'DB', color: '#0088ff' },
+            ];
+            
+            // Draw connections
+            ctx.strokeStyle = '#00ff4133';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < nodes.length; i++) {
+                ctx.beginPath();
+                ctx.moveTo(nodes[0].x, nodes[0].y);
+                ctx.lineTo(nodes[i].x, nodes[i].y);
+                ctx.stroke();
+            }
+            
+            // Draw nodes
+            nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 15, 0, Math.PI * 2);
+                ctx.fillStyle = node.color;
+                ctx.fill();
+                
+                ctx.fillStyle = '#000';
+                ctx.font = '10px Courier New';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, node.x, node.y);
+            });
+        }
+        
+        // Boot on load
+        window.addEventListener('DOMContentLoaded', bootSequence);
+    </script>
+</body>
+</html>

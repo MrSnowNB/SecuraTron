@@ -130,3 +130,8 @@ Every decision in this session was traced back to a fundamental truth:
 - **Validation** → Every component tested and verified
 
 This is how security tools should be built: from first principles, documented thoroughly, validated rigorously.
+
+## Documentation Hardening (April 30, 2026)
+- **Task:** Finalize experimental documentation with Red-Light Protocols.
+- **Decision:** Added explicit stop conditions to ARCHITECTURE.md to address the final 10% of the elite documentation rating.
+- **Outcome:** Subsystem now has defined triggers for latency, memory exhaustion, and validation failure.

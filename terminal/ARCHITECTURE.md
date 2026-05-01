@@ -142,3 +142,15 @@ Each stage transforms data into a higher-value form. The interface is the system
 3. **Streaming responses** for real-time feedback
 4. **Modular JavaScript** - each feature is a self-contained module
 5. **First-principles routing** - input is analyzed to determine the best processing path
+
+## Red-Light Protocols (Stop Conditions)
+
+To ensure system stability and data integrity, the interface must adhere to the following stop-and-report triggers:
+
+1. **Latency Threshold**: If WebSocket round-trip time (RTT) exceeds 1000ms for 3 consecutive packets, STOP and revert to HTTP long-polling.
+2. **Model Sync Mismatch**: If the health-check model slug does not match the active session slug, STOP and re-verify the model manager state.
+3. **Hardware Exhaustion**: If GPU memory utilization reaches 98% or system RAM free space drops below 512MB, STOP and evict the least recently used (LRU) model.
+4. **Validation Failure**: If any of the 8 core health checks fail, HALT all active tool-chains and display the failure state on the main dashboard.
+5. **Unauthorized Scope**: If a command is issued against a target not present in the active project's `scope.yaml`, the interface must hard-refuse the execution.
+
+**Doctrine Reference**: These protocols derive from the SecuraTron First Principles Loop (fp-loop) and the Identity of the Memory Organ Charter.

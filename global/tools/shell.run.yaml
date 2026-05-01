@@ -1,6 +1,6 @@
 # skill-card v1
 id: shell.run
-version: 1
+version: 2
 kind: atom
 tier: global
 author: human
@@ -12,8 +12,12 @@ inputs:
 outputs:
   type: shell.run.v1
 
-preconditions: []
-postconditions: []
+preconditions:
+- cmd is not empty
+- cmd does not contain dangerous patterns (rm -rf /, dd if=, mkfs)
+
+postconditions:
+- len(result) > 0 or exit_code == 0
 
 risk: medium
 side_effects: [system_modification]

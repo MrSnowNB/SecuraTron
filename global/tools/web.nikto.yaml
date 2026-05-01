@@ -1,13 +1,13 @@
 id: web.nikto
 kind: atom
 tier: global
-version: 1
+version: 4
 author: hermes
 description: Web server vulnerability scanning using Nikto — checks for 6000+ potentially dangerous files, misconfigurations, and outdated software.
 
 implementation:
   kind: shell
-  cmd: mkdir -p sessions/{session}/artifacts && nikto -host {target} -nolookup -nocheck -maxtime 15s -Format json -output sessions/{session}/artifacts/nikto-{ts} {flags}
+  cmd: mkdir -p sessions/{session}/artifacts && nikto -host {target} -nocheck -maxtime 30s -Format json -output sessions/{session}/artifacts/web.nikto-{ts} {flags}
 
 execution:
   timeout_seconds: 60
@@ -22,7 +22,7 @@ inputs:
     default: -Tuning 23b
 
 outputs:
-  artifact_path: sessions/{session}/artifacts/nikto-{ts}.json
+  artifact_path: sessions/{session}/artifacts/web.nikto-{ts}.json
   type: nikto.scan.v1
 
 preconditions:
@@ -30,7 +30,7 @@ preconditions:
 - network.reachable(inputs.target)
 
 postconditions:
-- artifact_exists(outputs.artifact_path)
+- artifact_exists(outputs.artifact_path) or artifact_exists(outputs.artifact_path.replace('.raw', '.json'))
 
 risk: low
 side_effects:

@@ -98,24 +98,49 @@ def parse_nikto_scan(raw_stdout, **kwargs):
     
     # Try both naming conventions: nikto-{ts}.json and web.nikto-{ts}.json
     json_path = None
-    for candidate in [
-        BASE_DIR / "sessions" / session / "artifacts" / f"nikto-{ts}.json",
-        BASE_DIR / "sessions" / session / "artifacts" / f"web.nikto-{ts}.json",
+    for base in [
+        BASE_DIR / "global" / "sessions",
+        BASE_DIR / "sessions",
     ]:
-        if candidate.exists():
-            json_path = candidate
+        for candidate in [
+            base / session / "artifacts" / f"nikto-{ts}.json",
+            base / session / "artifacts" / f"web.nikto-{ts}.json",
+        ]:
+            if candidate.exists():
+                json_path = candidate
+                break
+        if json_path:
             break
     
     if not json_path:
-        raise FileNotFoundError(
-            f"nikto JSON artifact not found at path: "
-            f"sessions/{session}/artifacts/nikto-{{ts}}.json (tried: "
-            f"{BASE_DIR / 'sessions' / session / 'artifacts' / f'nikto-{ts}.json'}, "
-            f"{BASE_DIR / 'sessions' / session / 'artifacts' / f'web.nikto-{ts}.json'})"
-        )
+        # Nikto may fail before creating the artifact (network issues, timeouts)
+        # Return a structured error so the dispatch system can classify it
+        return {
+            "error": "nikto_no_artifact",
+            "message": "Nikto did not produce a JSON artifact — likely network or connectivity failure",
+            "host": inputs.get("target", "unknown"),
+            "searched_paths": [
+                str(BASE_DIR / "global" / "sessions" / session / "artifacts" / f"nikto-{ts}.json"),
+                str(BASE_DIR / "global" / "sessions" / session / "artifacts" / f"web.nikto-{ts}.json"),
+                str(BASE_DIR / "sessions" / session / "artifacts" / f"nikto-{ts}.json"),
+                str(BASE_DIR / "sessions" / session / "artifacts" / f"web.nikto-{ts}.json"),
+            ],
+            "_json_path": None,
+        }
     
     with open(json_path) as f:
-        data = json.load(f)
+        content = f.read()
+    
+    # Handle empty files — nikto may create the file but write nothing
+    if not content.strip():
+        return {
+            "error": "nikto_no_artifact",
+            "message": "Nikto created an empty artifact file — target likely unreachable or scan timed out",
+            "host": inputs.get("target", "unknown"),
+            "_json_path": str(json_path),
+        }
+    
+    data = json.loads(content)
     
     # Nikto JSON format: [{host, ip, port, vulnerabilities: [{id, method, msg, references, url}]}]
     results = []
@@ -171,6 +196,9 @@ def parse(type_name, raw_stdout, **kwargs):
     
     try:
         parsed = PARSERS[type_name](raw_stdout, **kwargs)
+        # If parser returns a dict with 'error' key, treat as failure
+        if isinstance(parsed, dict) and "error" in parsed:
+            return {"ok": False, "reason": parsed["error"], "result": parsed}
         return {"ok": True, "result": parsed}
     except Exception as e:
         return {"ok": False, "reason": "parsing_exception", "error": str(e)}

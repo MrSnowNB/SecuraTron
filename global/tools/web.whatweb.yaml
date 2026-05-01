@@ -3,7 +3,7 @@ created: '2026-04-26T16:30:00-04:00'
 description: Web technology fingerprinting using WhatWeb — identifies CMS, frameworks, widgets, and other web technologies.
 id: web.whatweb
 implementation:
-  cmd: whatweb {flags} http://{target} --log-json /dev/stdout
+  cmd: whatweb --colour=never --quiet {flags} http://{target} --log-json /dev/stdout
   kind: shell
 inputs:
   flags:
@@ -19,7 +19,7 @@ outputs:
   type: whatweb.fingerprint.v1
 postconditions:
 - artifact_exists(outputs.artifact_path)
-- result|length > 0
+- len(result) > 0
 preconditions:
 - scope.includes(inputs.target)
 - network.reachable(inputs.target)
@@ -36,4 +36,4 @@ trials:
   failure: 0
   last_run: null
   success: 0
-version: 1
+version: 2

@@ -1,0 +1,79 @@
+author: hermes
+created: '2026-04-30T21:00:00-04:00'
+description: >
+  Full host reconnaissance molecule. Chains nmap (port scan) → whatweb
+  (tech fingerprint) → nikto (web vulns) → gobuster (dir enum).
+  All results merged and written to session memory.
+id: recon.host.full
+implementation:
+  kind: compose
+  dag:
+    nmap_scan:
+      atom: kali.nmap
+      inputs:
+        flags: -sV -Pn -T3
+        target: '{{inputs.target}}'
+    whatweb_scan:
+      atom: web.whatweb
+      inputs:
+        target: '{{inputs.target}}'
+      depends_on:
+      - nmap_scan
+    nikto_scan:
+      atom: web.nikto
+      inputs:
+        flags: -maxtime 30
+        target: '{{inputs.target}}'
+      depends_on:
+      - nmap_scan
+    gobuster_scan:
+      atom: web.gobuster
+      inputs:
+        flags: -f --no-error -q -t 10
+        target: '{{inputs.target}}'
+      depends_on:
+      - nmap_scan
+    merge_findings:
+      atom: mem.write_session
+      inputs:
+        path: findings/{{inputs.target}}_recon_full.json
+        data:
+          molecule: recon.host.full
+          target: '{{inputs.target}}'
+          nmap: '{{steps.nmap_scan.result}}'
+          whatweb: '{{steps.whatweb_scan.result}}'
+          nikto: '{{steps.nikto_scan.result}}'
+          gobuster: '{{steps.gobuster_scan.result}}'
+      depends_on:
+      - whatweb_scan
+      - nikto_scan
+      - gobuster_scan
+inputs:
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+kind: molecule
+outputs:
+  type: recon.host.full.v1
+preconditions:
+- scope.includes(inputs.target)
+- network.reachable(inputs.target)
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: false
+reversible: false
+risk: medium
+side_effects:
+- network_probe
+- web_scan
+- vuln_scan
+- directory_enum
+- memory_write
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0
+version: 1

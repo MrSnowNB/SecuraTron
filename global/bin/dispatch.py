@@ -3,7 +3,7 @@ import subprocess
 import time
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Ensure the bin directory is in path for imports
 sys.path.append(str(Path(__file__).parent))
@@ -37,7 +37,7 @@ def dispatch(card: dict, inputs: dict, project_id: str, session_id: str) -> dict
         "session_id": session_id,
         "project_id": project_id,
         "inputs_fingerprint": inputs,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     }
 
     try:
@@ -60,6 +60,10 @@ def dispatch(card: dict, inputs: dict, project_id: str, session_id: str) -> dict
         # Record reason if provided (e.g. timeout)
         if "reason" in result and not result.get("ok"):
              trial_entry["reason"] = result["reason"]
+        # Include molecule-level metadata
+        if impl["kind"] == "compose":
+            trial_entry["molecule"] = card.get("id", "unknown")
+            trial_entry["steps"] = result.get("steps", [])
 
         ledger.record_trial(skill_id, trial_entry)
         
@@ -72,6 +76,9 @@ def dispatch(card: dict, inputs: dict, project_id: str, session_id: str) -> dict
             "reason": str(e),
             "duration_ms": duration_ms
         })
+        if impl["kind"] == "compose":
+            trial_entry["molecule"] = card.get("id", "unknown")
+            trial_entry["steps"] = []
         ledger.record_trial(skill_id, trial_entry)
         return {"ok": False, "reason": "dispatch_exception", "error": str(e)}
 
@@ -134,8 +141,11 @@ def run_shell_atom(card: dict, inputs: dict, session_id: str) -> dict:
         if not parsed["ok"]:
             return parsed
 
+        # Use parser's ok status when available; fall back to return code
+        parser_ok = parsed.get("ok", True)
+        result_error = parsed.get("result", {}).get("error") if isinstance(parsed.get("result"), dict) else None
         return {
-            "ok": process.returncode == 0,
+            "ok": parser_ok and (process.returncode == 0 or result_error == "nikto_no_artifact"),
             "result": parsed["result"],
             "artifact_path": artifact_rel_path
         }
@@ -201,6 +211,43 @@ def _topo_sort_dag(dag: dict) -> list[str]:
     
     return order
 
+def _resolve_template(value, molecule_inputs, steps_results):
+    """Recursively resolve template expressions in a value.
+
+    Supports:
+    - {{inputs.X}} → molecule input value
+    - {{steps.X.result}} → full result JSON string
+    - {{steps.X.result.Y}} → individual result field
+
+    Works on strings, dicts, and lists (recursively).
+    """
+    if isinstance(value, str):
+        resolved = value
+        # Replace inputs.* references
+        for ink, inv in molecule_inputs.items():
+            resolved = resolved.replace("{{" + f"inputs.{ink}" + "}}", str(inv))
+        # Replace steps.* references
+        for step_name, step_res in steps_results.items():
+            resolved = resolved.replace(
+                "{{" + f"steps.{step_name}.result" + "}}",
+                json.dumps(step_res.get("result"))
+            )
+            if step_res.get("result") and isinstance(step_res["result"], dict):
+                for resk, resv in step_res["result"].items():
+                    resolved = resolved.replace(
+                        "{{" + f"steps.{step_name}.result.{resk}" + "}}",
+                        str(resv)
+                    )
+        return resolved
+    elif isinstance(value, dict):
+        return {k: _resolve_template(v, molecule_inputs, steps_results)
+                for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_resolve_template(item, molecule_inputs, steps_results)
+                for item in value]
+    else:
+        return value
+
 def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> dict:
     """Execute a molecule by orchestrating its DAG of atoms."""
     dag = card["implementation"]["dag"]
@@ -222,19 +269,9 @@ def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> 
         atom_card = CARDS[atom_id]
         
         resolved_inputs = {}
-        for k, v in step_config.get("inputs", {}).items():
-            if isinstance(v, str) and "{{" in v and "}}" in v:
-                resolved_val = v
-                for ink, inv in inputs.items():
-                    resolved_val = resolved_val.replace("{{" + f"inputs.{ink}" + "}}", str(inv))
-                for step_name, step_res in steps_results.items():
-                    resolved_val = resolved_val.replace("{{" + f"steps.{step_name}.result" + "}}", json.dumps(step_res.get("result")))
-                    if step_res.get("result") and isinstance(step_res["result"], dict):
-                        for resk, resv in step_res["result"].items():
-                            resolved_val = resolved_val.replace("{{" + f"steps.{step_name}.result.{resk}" + "}}", str(resv))
-                resolved_inputs[k] = resolved_val
-            else:
-                resolved_inputs[k] = v
+        step_inputs = step_config.get("inputs", {}) if isinstance(step_config.get("inputs"), dict) else {}
+        for k, v in step_inputs.items():
+            resolved_inputs[k] = _resolve_template(v, inputs, steps_results)
         
         res = dispatch(atom_card, resolved_inputs, project_id, session_id)
         if not res.get("ok"):
@@ -244,7 +281,7 @@ def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> 
     return {
         "ok": True,
         "result": steps_results.get(list(dag.keys())[-1], {}).get("result"),
-        "steps": list(steps_results.keys())
+        "steps": [{"step_id": sid, "status": "success", "result": steps_results[sid]} for sid in execution_order]
     }
 
 def cli_memory_precheck(args):
@@ -254,7 +291,7 @@ def cli_memory_precheck(args):
     then returns a recommendation on whether to proceed with atom authorship.
     """
     import sqlite3
-    from datetime import datetime, timedelta
+    from datetime import datetime, timezone, timedelta
     import re
 
     skill_id = args.skill

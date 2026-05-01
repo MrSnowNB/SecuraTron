@@ -1,15 +1,22 @@
-# Securatron Security Operations Center
+# SecuraTron SOC Interface (Terminal)
 
 ## Overview
 
-A first-principles-based Security Operations Center (SOC) interface built on the Securatron harness. Leverages local AI models for multi-modal security analysis, voice interaction, and threat visualization.
+The Terminal is the multi-modal front-end for the SecuraTron harness. It provides a visual and voice-driven interface for human operators to monitor, direct, and audit the autonomous activities of the underlying engine.
+
+## Integration with SecuraTron
+
+The Terminal acts as a high-level **Outer Builder** and observer:
+1. **Visualization:** Renders real-time telemetry from `lemond` and the `mcp_server`.
+2. **Monitoring:** Provides a live view of the **Self-Improvement Loop** and active **Molecule** executions.
+3. **Control:** Allows for manual "Human Gate" approvals for destructive molecules.
+4. **Audit:** Displays trial ledgers and post-mortem findings in a readable dashboard format.
 
 ## Architecture
 
 ### First Principles
 
 A security interface is fundamentally an **information transformation pipeline**:
-
 ```
 Raw Data → Ingestion → Processing → Intelligence → Action
 ```

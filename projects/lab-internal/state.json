@@ -1,12 +1,12 @@
 {
   "project_id": "lab-internal",
   "version": "1.0.0",
-  "last_updated": "2026-05-02T09:30:00Z",
-  "current_session": null,
+  "last_updated": "2026-05-02T14:10:16.990406+00:00",
+  "current_session": "01KQGKSK03QY35VDPJWDVX7K32",
   "progress": {
     "total_sessions": 87,
-    "sessions_with_findings": 9,
-    "sessions_failed": 78,
+    "sessions_with_findings": 17,
+    "sessions_failed": 79,
     "atoms_built": 3,
     "atoms_promoted": 0,
     "improvements_closed": 4,
@@ -15,14 +15,18 @@
   "active_targets": [
     {
       "target": "127.0.0.1",
-      "services": ["juice_shop:3000"],
+      "services": [
+        "juice_shop:3000"
+      ],
       "status": "active",
       "last_scanned": "2026-04-27T21:00:00Z",
       "scans_completed": 3
     },
     {
       "target": "scanme.nmap.org",
-      "services": ["http:80"],
+      "services": [
+        "http:80"
+      ],
       "status": "rate_limited",
       "last_scanned": "2026-04-30T22:30:26Z",
       "scans_completed": 20,
@@ -41,14 +45,19 @@
       "trials": 45,
       "success_rate": 0.49,
       "last_updated": "2026-04-30T22:30:26Z",
-      "issues": ["rate_limiting", "exit_code_misleading"]
+      "issues": [
+        "rate_limiting",
+        "exit_code_misleading"
+      ]
     },
     "web.whatweb": {
       "status": "promoted",
       "trials": 24,
       "success_rate": 0.54,
       "last_updated": "2026-04-26T20:41:30Z",
-      "issues": ["parser_fragility"]
+      "issues": [
+        "parser_fragility"
+      ]
     }
   },
   "known_issues": [
@@ -75,6 +84,13 @@
       "created_at": "2026-04-25T22:00:00Z",
       "fixed_at": "2026-05-02T12:00:00Z",
       "notes": "Fixed in dispatch.py and gate.py with validation"
+    },
+    {
+      "id": "ISSUE-TEST-001",
+      "title": "State Management Test Issue",
+      "status": "test",
+      "created_at": "2026-05-02T14:06:02.692597+00:00",
+      "notes": "This is a test issue to verify append functionality"
     }
   ],
   "priorities": [
@@ -102,11 +118,36 @@
   ],
   "recent_sessions": [
     {
+      "session_id": "01KQGKSK03QY35VDPJWDVX7K32",
+      "timestamp": "2026-05-02T14:07:29.876870+00:00",
+      "status": "success",
+      "findings": 5,
+      "notes": "Test session with 5 findings"
+    },
+    {
+      "session_id": "01KQGKSK03QY35VDPJWDVX7K31",
+      "timestamp": "2026-05-02T14:07:06.957723+00:00",
+      "status": "failed",
+      "findings": 0,
+      "notes": "Test failed session - template resolution error"
+    },
+    {
+      "session_id": "01KQGKSK03QY35VDPJWDVX7K30",
+      "timestamp": "2026-05-02T14:06:45.757515+00:00",
+      "status": "success",
+      "findings": 1,
+      "notes": "Test successful session"
+    },
+    {
       "session_id": "01KQGKSK03QY35VDPJWDVX7K30",
       "timestamp": "2026-05-01T01:52:33Z",
       "status": "success",
       "findings": 1,
       "notes": "Template resolution issue - {{inputs.flags}} in nmap command"
     }
-  ]
+  ],
+  "targets": [],
+  "atoms": [],
+  "nonexistent_key": "test_value",
+  "test_json": "{invalid"
 }

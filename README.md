@@ -22,6 +22,11 @@ SecuraTron is built on three foundational pillars:
 - **Act:** Formal Improvement Tickets (IT-NNN) track fixes to cards, parsers, or engine logic.
 - **Verify:** Mandatory evidence-based closing of tickets via trial re-runs.
 
+### 4. Persistent State Management
+- **Context Persistence:** Maintains project-level state (`state.json`) to survive context compaction and session restarts.
+- **State Tools:** Standardized CLI utilities (`manage_state.py`, `sync_session_state.py`) for atomic state updates.
+- **Continuity:** Ensures autonomous loops pick up exactly where they left off by reading persistent priorities and known issues.
+
 ## Directory Structure
 
 ```text

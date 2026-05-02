@@ -2,6 +2,7 @@ import sys
 import subprocess
 import time
 import json
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -13,6 +14,42 @@ import mem
 import parsers
 
 BASE_DIR = Path.home() / ".securatron"
+
+# Template resolution guard: regex to detect unresolved {{inputs.*}} patterns
+_UNRESOLVED_TEMPLATE_RE = re.compile(r'\{\{inputs\.\w+\}\}')
+
+def _check_unresolved_inputs(inputs: dict) -> tuple[bool, str]:
+    """Check if any input value contains unresolved {{inputs.*}} templates.
+    
+    Returns (is_valid, error_message).
+    This prevents the agent from passing literal template strings like
+    '{{inputs.flags}}' instead of resolved values like '-sV -Pn -T3'.
+    """
+    for key, value in inputs.items():
+        if isinstance(value, str) and _UNRESOLVED_TEMPLATE_RE.search(value):
+            return False, f"template_not_resolved: input '{key}' contains unresolved template '{value}' — resolve to actual value before calling invoke_skill"
+        elif isinstance(value, (dict, list)):
+            # Recursively check nested structures
+            nested_valid, nested_error = _check_unresolved_nested(value)
+            if not nested_valid:
+                return False, f"template_not_resolved: {nested_error}"
+    return True, ""
+
+def _check_unresolved_nested(value) -> tuple[bool, str]:
+    """Recursively check nested dicts/lists for unresolved templates."""
+    if isinstance(value, str) and _UNRESOLVED_TEMPLATE_RE.search(value):
+        return False, f"unresolved template found in value: '{value}'"
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            valid, err = _check_unresolved_nested(v)
+            if not valid:
+                return False, f"in key '{k}': {err}"
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            valid, err = _check_unresolved_nested(item)
+            if not valid:
+                return False, f"in list index {i}: {err}"
+    return True, ""
 
 def safe_expand(cmd_template: str, inputs: dict) -> str:
     """Safely expand command templates using inputs."""
@@ -30,6 +67,11 @@ def dispatch(card: dict, inputs: dict, project_id: str, session_id: str) -> dict
     skill_id = card["id"]
     impl = card["implementation"]
     start_time = time.time()
+    
+    # Phase 0: Template resolution guard — reject {{inputs.*}} literals
+    valid, error = _check_unresolved_inputs(inputs)
+    if not valid:
+        return {"ok": False, "reason": error}
     
     trial_entry = {
         "ulid": session_id,

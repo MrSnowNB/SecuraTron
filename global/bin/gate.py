@@ -6,6 +6,9 @@ from pathlib import Path
 
 BASE_DIR = Path.home() / ".securatron"
 
+# Template resolution guard: detect unresolved {{inputs.*}} patterns
+_UNRESOLVED_TEMPLATE_RE = re.compile(r'\{\{inputs\.\w+\}\}')
+
 def check_scope_match(target: str, allowed_list: list[str]) -> bool:
     """Check if a target matches an entry or is contained within a CIDR range."""
     # Strip port if present (e.g., 127.0.0.1:80 or example.com:443)
@@ -22,6 +25,39 @@ def check_scope_match(target: str, allowed_list: list[str]) -> bool:
         except ValueError:
             continue
     return False
+
+def check_template_resolved(inputs: dict) -> tuple[bool, str]:
+    """Validate that inputs don't contain unresolved template strings.
+    
+    Returns (is_valid, error_message).
+    This catches the common failure mode where the agent passes literal
+    '{{inputs.flags}}' instead of resolved values like '-sV -Pn -T3'.
+    """
+    for key, value in inputs.items():
+        if isinstance(value, str) and _UNRESOLVED_TEMPLATE_RE.search(value):
+            return False, f"template_not_resolved: input '{key}' contains unresolved template '{{inputs.{key}}}' — resolve to actual value"
+        elif isinstance(value, (dict, list)):
+            # Recursively check nested structures
+            nested_valid, nested_error = _check_nested(value, key)
+            if not nested_valid:
+                return False, nested_error
+    return True, ""
+
+def _check_nested(value, parent_key: str) -> tuple[bool, str]:
+    """Recursively check nested dicts/lists for unresolved templates."""
+    if isinstance(value, str) and _UNRESOLVED_TEMPLATE_RE.search(value):
+        return False, f"template_not_resolved in '{parent_key}': contains '{{inputs.*}}' pattern"
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            valid, err = _check_nested(v, f"{parent_key}.{k}")
+            if not valid:
+                return False, err
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            valid, err = _check_nested(item, f"{parent_key}[{i}]")
+            if not valid:
+                return False, err
+    return True, ""
 
 def check_scope(card: dict, inputs: dict, project_id: str, scope_file: str = None) -> bool:
     """Validate that inputs (like targets) are within project scope."""
@@ -121,6 +157,11 @@ def check_budget(card: dict, session_id: str) -> bool:
 
 def validate_all(card: dict, inputs: dict, project_id: str, session_id: str) -> tuple[bool, str]:
     """Run all gate checks."""
+    # Phase 0: Template resolution guard
+    tmpl_valid, tmpl_err = check_template_resolved(inputs)
+    if not tmpl_valid:
+        return False, tmpl_err
+    
     if not check_secrets(inputs):
         return False, "secret_leak_detected"
     

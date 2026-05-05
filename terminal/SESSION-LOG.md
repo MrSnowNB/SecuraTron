@@ -140,3 +140,9 @@ This is how security tools should be built: from first principles, documented th
 - **Task:** Verify the persistent state management system via first-principles testing.
 - **Outcome:** 100% PASS (14/14 tests).
 - **Evidence:** State matches pre-compaction state via checksum; session results sync correctly.
+
+## Web Recon Exploration Molecule (May 5, 2026)
+- **Task:** Author the `web.recon.explore` molecule to chain browser inspection atoms into a high-level reconnaissance workflow.
+- **Decision:** Implement a four-step gated DAG (Inspect -> Parse -> Drill -> Decision) with explicit operator approval for destructive actions.
+- **Outcome:** Created `global/skills/web.recon.explore.yaml`. Molecule enforces 90%+ compression and viewport-priority exploration.
+- **Verification:** Molecule structure validated against the browser toolchain benchmarks.

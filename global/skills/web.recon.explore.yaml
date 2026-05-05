@@ -1,0 +1,241 @@
+author: hermes
+created: '2026-05-05T19:30:00Z'
+description: >
+  Web exploration molecule — progressive reconnaissance of unknown web
+  applications to find authentication boundaries. Chains inspect → drill
+  → interact in a gated loop. Prioritizes viewport-visible elements,
+  caps payloads at 100 elements for 90%+ compression. Requires operator
+  approval before any destructive interact action (form submission, login).
+id: web.recon.explore
+kind: molecule
+tier: global
+version: 1
+
+# === IMPLEMENTATION: MOLECULE DAG ===
+implementation:
+  kind: compose
+  dag:
+    lay_of_land:
+      atom: web.browser.inspect
+      inputs:
+        url: '{{inputs.target_url}}'
+        max_summary_chars: 300
+        include_interactive: true
+        include_images: false
+    auth_vector_scan:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/auth_vectors.json'
+        data:
+          molecule: web.recon.explore
+          target_url: '{{inputs.target_url}}'
+          page_id: '{{steps.lay_of_land.result.page_id}}'
+          interactive_elements: '{{steps.lay_of_land.result.interactive_elements}}'
+    candidate_drill:
+      atom: web.browser.drill
+      inputs:
+        page_id: '{{steps.lay_of_land.result.page_id}}'
+        ref_id: '{{candidate.ref_id}}'
+        url: '{{inputs.target_url}}'
+      depends_on:
+        - auth_vector_scan
+    decision_gate:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/decision.json'
+        data:
+          molecule: web.recon.explore
+          target_url: '{{inputs.target_url}}'
+          phase: 'decision'
+          auth_boundaries_found: '"true | false"'
+          candidates_validated: '{{candidate_drill.results}}'
+          next_action: '"interact" | "confirm_static" | "escalate"'
+          requires_operator_approval: true
+      depends_on:
+        - candidate_drill
+    interact_action:
+      atom: web.browser.interact
+      inputs:
+        page_id: '{{steps.lay_of_land.result.page_id}}'
+        action: '{{inputs.interact_action_type}}'
+        ref_id: '{{candidate.ref_id}}'
+        text: '{{inputs.interact_text}}'
+      depends_on:
+        - decision_gate
+
+# === INPUTS ===
+inputs:
+  target_url:
+    required: true
+    type: string
+    validator: uri
+    description: Target URL to explore (e.g., https://target.internal/login)
+  interact_action_type:
+    required: false
+    type: string
+    enum: [click, type, hover, scroll, screenshot]
+    description: >
+      Action to perform after operator approval (default: read-only)
+  interact_text:
+    required: false
+    type: string
+    description: Text to type into fields (only with action=type)
+
+# === OUTPUTS ===
+outputs:
+  type: web.recon.explore.v1
+
+# === PREREQUISITES ===
+prerequisites:
+  - web.browser.inspect
+  - web.browser.drill
+  - web.browser.interact
+  - mem.write_session
+
+# === OPERATIONAL DOCTRINE ===
+doctrine:
+  purpose: >
+    Standard operating procedure for navigating unknown web applications
+    and finding authentication boundaries. Used when the target URL is
+    not yet mapped and the agent must discover login forms, SSO buttons,
+    search endpoints, and registration flows autonomously.
+
+  execution_graph:
+    description: >
+      Four-step progressive loop. Each step reduces uncertainty and
+      narrows the attack surface until a viable path is identified
+      or the page is confirmed static.
+
+    steps:
+      - step: 1
+        name: inspect
+        atom: web.browser.inspect
+        description: >
+          Run inspect to get the lay of the land. Produces a compact page
+          summary (under 300 chars) plus a capped list of interactive
+          elements (default 100, viewport-prioritized). Output payload
+          typically <15KB vs 200KB+ raw HTML.
+        output_key: lay_of_land
+        gates:
+          - condition: result.interactive_count > 0
+            description: Page must have interactive elements (not static)
+          - condition: result.summary and len(result.summary) <= 300
+            description: Summary stays under max_summary_chars
+
+      - step: 2
+        name: parse_auth_vectors
+        type: analysis
+        description: >
+          Parse the inspect output for authentication vectors. Classify
+          candidate elements by type:
+          * login_forms — forms with [type="password"] or action*=login/auth/signin
+          * sso_buttons — buttons/links with Google, GitHub, SSO, OIDC, OAuth
+          * search_params — inputs with name*=q/name*=search
+          * registration — forms with action*=register/signup/create
+        input: '{{steps.lay_of_land.result.interactive_elements}}'
+        output: auth_candidates (list of {ref_id, type, confidence})
+        gates:
+          - condition: auth_candidates is not empty
+            description: At least one auth vector found
+            failure_path: page_confirmed_static
+
+      - step: 3
+        name: drill_validate
+        atom: web.browser.drill
+        description: >
+          Use drill on candidate ref_ids to confirm their DOM structure.
+          Verifies element types, input attributes, form action URLs,
+          and parent context. Drills up to 5 candidates.
+        input:
+          page_id: '{{steps.lay_of_land.result.page_id}}'
+          ref_id: '{{candidate.ref_id}}'
+        output_key: candidate_drill
+        gates:
+          - condition: result.detail is dict and len(str(result.detail)) > 10
+            description: Drill returned meaningful DOM detail
+          - condition: result.detail.type == 'password' for login_candidates
+            description: Login form inputs are actually password fields
+
+      - step: 4
+        name: decision_gate
+        type: evaluation
+        description: >
+          Evaluate findings and set the next action.
+          Three possible outcomes:
+          * interact — auth boundaries validated, ready for operator-approved action
+          * confirm_static — no auth vectors found, page is informational
+          * escalate — ambiguous results, operator needs manual review
+        output_key: decision_gate
+        gates:
+          - condition: next_action in ['interact', 'confirm_static', 'escalate']
+            description: Decision is one of the three valid outcomes
+
+  safety_and_stealth:
+    rules:
+      - rule: operator_approval_required
+        description: >
+          The agent MUST pause and ask for operator approval before
+          executing any destructive interact action (submitting a login
+          form, clicking SSO, typing credentials). Read-only phases
+          (inspect, drill) proceed automatically.
+        enforced_by: DAG operator_approval_required field
+        apply_to: interact_action step only
+
+      - rule: payload_compression_enforced
+        description: >
+          Inspect output must stay under 10% of raw HTML payload
+          (90%+ compression). Use --max-elements 100 and --max-chars 300.
+          If compression < 90%, the tool needs tuning before exploration.
+        enforced_by: benchmark_molecule.sh compression gate
+
+      - rule: no_credential_storage
+        description: >
+          Credential text (interact_text) is never persisted to disk.
+          It flows only through memory and the browser session.
+          Clean up after use.
+
+      - rule: viewport_priority
+        description: >
+          Elements visible in the viewport are prioritized in the
+          inspect output. Off-screen elements are scored lower and
+          only returned if under the cap. This ensures the agent
+          sees what a real user sees first.
+
+      - rule: confirm_static_path
+        description: >
+          If no auth vectors are found, the agent reports the page
+          as confirmed static and does NOT attempt interaction.
+          The decision gate outputs next_action=confirm_static.
+
+  success_gate:
+    description: >
+      The agent successfully identifies a viable path forward OR
+      confirms the app is static. One of these must be true:
+      * auth_boundaries_found == true AND candidates_validated > 0
+        → path forward identified, proceed to interact (after approval)
+      * auth_boundaries_found == false AND interactive_count > 0
+        → page has content but no auth boundary, report as static
+      * interactive_count == 0
+        → page is fully static (no JS-rendered elements), report as static
+
+# === SAFETY ===
+preconditions:
+  - scope.includes(inputs.target_url)
+  - chromium.available
+  - playwright.installed
+  - network.reachable(inputs.target_url)
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: true
+reversible: true
+risk: medium
+side_effects:
+  - browser_launch
+  - network_probe
+  - form_submission
+  - memory_write
+trials:
+  failure: 0
+  last_run: null
+  success: 0

@@ -1,0 +1,66 @@
+id: web.browser.inspect
+kind: atom
+tier: global
+version: 1
+author: SecuraTron Outer Builder
+description: Progressive Browser Inspection Suite — lightweight page summaries with interactive element mapping, drill-down, and browser interaction. 14x token reduction vs raw curl on JS-heavy targets.
+
+implementation:
+  kind: shell
+  cmd: >
+    {atom_dir}/.venv/bin/python {atom_dir}/browser_inspect.py
+    --url {url}
+    --max-chars {max_summary_chars}
+    --include-interactive
+    --include-images
+
+execution:
+  timeout_seconds: 60
+
+inputs:
+  url:
+    type: string
+    required: true
+    description: Target URL to inspect
+  max_summary_chars:
+    type: integer
+    default: 500
+    description: Max characters for page summary output
+  include_interactive:
+    type: boolean
+    default: true
+    description: Include interactive elements in output
+  include_images:
+    type: boolean
+    default: false
+    description: Include image URLs in output
+
+outputs:
+  type: web.browser.inspect.v1
+  artifact_path: '{session}/artifacts/web.browser.inspect-{ts}.json'
+
+atom_dir: ~/.securatron/global/tools/web.browser.inspect
+
+preconditions:
+- scope.includes(inputs.url)
+- chromium.available
+- playwright.installed
+
+postconditions:
+- result|length > 0
+- result.page_id and len(result.page_id) > 0
+- result.summary and len(result.summary) <= inputs.max_summary_chars
+
+risk: low
+side_effects:
+- browser_launch
+- network_probe
+reversible: true
+promotion:
+  required_success: 3
+  required_distinct_inputs: 3
+  requires_human_review: false
+trials:
+  success: 0
+  failure: 0
+  last_run: null

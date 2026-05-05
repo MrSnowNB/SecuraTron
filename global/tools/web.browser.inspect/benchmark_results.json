@@ -1,0 +1,17 @@
+{
+  "trial_id": "bench_wiki_1778008852",
+  "ts": "2026-05-05T19:20:52Z",
+  "target": "https://en.wikipedia.org/wiki/Intelligent_agent",
+  "metrics": {
+    "curl_bytes": 246682,
+    "inspect_bytes": 13872,
+    "compression_pct": 94,
+    "elements_found": 100
+  },
+  "gates": {
+    "efficiency": "PASS",
+    "accuracy": "PASS",
+    "drill": "PASS"
+  },
+  "result": 1
+}

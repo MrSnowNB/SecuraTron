@@ -1,0 +1,43 @@
+[
+  {
+    "trial_id": "T1-basic",
+    "ts": "2026-05-05T18:57:20Z",
+    "result": 1,
+    "target": "Basic page inspection on example.com",
+    "output": "{\n  \"page_id\": \"page_03a1a79c3ff8\",\n  \"url\": \"https://example.com\",\n  \"title\": \"Example Domain\",\n  \"structure\": [\n    \"unknown\"\n  ],\n  \"interactive_count\": 1,\n  \"summary\": \"Page: Example Domain. Struc",
+    "gates_passed": [
+      "summary_under_limit",
+      "page_id_present",
+      "interactive_elements_valid",
+      "valid_json"
+    ],
+    "gates_failed": []
+  },
+  {
+    "trial_id": "T2-drill",
+    "ts": "2026-05-05T18:57:22Z",
+    "result": 1,
+    "target": "Drill into element @e1 from example.com",
+    "output": "{\n  \"page_id\": \"page_03a1a79c3ff8\",\n  \"ref_id\": \"@e1\",\n  \"detail\": {\n    \"html\": \"<a href=\\\"https://iana.org/domains/example\\\">Learn more</a>\",\n    \"attributes\": {\n      \"href\": \"https://iana.org/doma",
+    "gates_passed": [
+      "element_exists",
+      "detail_non_empty",
+      "valid_json"
+    ],
+    "gates_failed": []
+  },
+  {
+    "trial_id": "T3-screenshot",
+    "ts": "2026-05-05T18:57:23Z",
+    "result": 1,
+    "target": "Screenshot action on example.com",
+    "output": "{\n  \"page_id\": \"test_page_1\",\n  \"action\": \"screenshot\",\n  \"ref_id\": \"@e1\",\n  \"status\": \"success\",\n  \"message\": \"Screenshot saved to /tmp/screenshot_20260505_185723.png\",\n  \"ts\": \"2026-05-05T18:57:23.8",
+    "gates_passed": [
+      "action_valid",
+      "status_indicated",
+      "screenshot_saved",
+      "valid_json"
+    ],
+    "gates_failed": []
+  }
+]

@@ -1,0 +1,222 @@
+# Atom: web.browser.inspect
+# Progressive Browser Inspection Suite
+# Global Tier: ~/.securatron/global/tools/web.browser.inspect/
+
+name: web.browser.inspect
+version: 1.0.0
+description: >
+  Lightweight browser inspection tool that returns page summaries under 500 chars,
+  avoiding context bloat from full accessibility tree dumps.
+  Supports progressive drilling into elements and interactive actions.
+
+author: SecuraTron Outer Builder
+created: 2026-05-02T00:00:00Z
+tier: 1
+isolation_path: ~/.securatron/global/tools/web.browser.inspect/
+
+# === INPUT SCHEMA ===
+input_schema:
+  # browser_inspect: Returns lightweight page summary
+  browser_inspect:
+    type: object
+    required: [url]
+    properties:
+      url:
+        type: string
+        description: Target URL to inspect
+        pattern: "^https?://"
+      max_summary_chars:
+        type: integer
+        default: 500
+        description: Max characters for summary output
+      include_interactive:
+        type: boolean
+        default: true
+        description: Include interactive elements in summary
+      include_images:
+        type: boolean
+        default: false
+        description: Include image URLs (disabled by default to save context)
+
+  # browser_drill: Returns detail for a single element
+  browser_drill:
+    type: object
+    required: [page_state, ref_id]
+    properties:
+      page_state:
+        type: string
+        description: State ID from previous browser_inspect response
+      ref_id:
+        type: string
+        description: Element reference ID to drill into (e.g., "@e5")
+
+  # browser_interact: Performs action on page
+  browser_interact:
+    type: object
+    required: [page_state, action, ref_id]
+    properties:
+      page_state:
+        type: string
+        description: State ID from previous response
+      action:
+        type: string
+        enum: [click, type, hover, scroll, screenshot]
+        description: Action to perform
+      ref_id:
+        type: string
+        description: Element reference ID
+      text:
+        type: string
+        description: Text to type (only for "type" action)
+      direction:
+        type: string
+        enum: [up, down]
+        description: Scroll direction (only for "scroll" action)
+
+# === OUTPUT SCHEMA ===
+output_schema:
+  # browser_inspect response
+  browser_inspect:
+    type: object
+    required: [page_id, title, structure, interactive_count, summary, interactive_elements]
+    properties:
+      page_id:
+        type: string
+        description: Unique identifier for this page state (use for subsequent drill/interact calls)
+      url:
+        type: string
+      title:
+        type: string
+      structure:
+        type: array
+        description: High-level page regions (header, nav, main, aside, footer)
+      interactive_count:
+        type: integer
+        description: Number of interactive elements found
+      summary:
+        type: string
+        description: Human-readable page summary (under max_summary_chars)
+      interactive_elements:
+        type: array
+        description: Compact list of interactive elements with ref IDs
+        items:
+          type: object
+          properties:
+            ref_id:
+              type: string
+              description: Element reference ID (e.g., "@e5")
+            tag:
+              type: string
+              description: HTML tag name
+            text:
+              type: string
+              description: Visible text content
+            type:
+              type: string
+              description: Element type (button, link, input, etc.)
+            position:
+              type: string
+              description: Approximate position on page
+
+  # browser_drill response
+  browser_drill:
+    type: object
+    required: [page_id, ref_id, detail]
+    properties:
+      page_id:
+        type: string
+      ref_id:
+        type: string
+      detail:
+        type: string
+        description: Full content/attributes of the specified element
+
+  # browser_interact response
+  browser_interact:
+    type: object
+    required: [page_id, action, status, message]
+    properties:
+      page_id:
+        type: string
+      action:
+        type: string
+      status:
+        type: string
+        enum: [success, failure, error]
+      message:
+        type: string
+      new_interactive_count:
+        type: integer
+        description: Updated count of interactive elements after action
+
+# === GATE CRITERIA ===
+gates:
+  browser_inspect:
+    - name: summary_under_limit
+      description: Summary must be under max_summary_chars (default 500)
+      condition: len(summary) <= max_summary_chars
+    - name: valid_json
+      description: Output must be valid JSON
+      condition: json.loads(output) succeeds
+    - name: page_id_present
+      description: page_id must be present and non-empty
+      condition: page_id and len(page_id) > 0
+    - name: interactive_elements_valid
+      description: Each element must have ref_id, tag, and type
+      condition: all(e.get('ref_id') and e.get('tag') and e.get('type') for e in interactive_elements)
+
+  browser_drill:
+    - name: element_exists
+      description: ref_id must correspond to an element in the page state
+      condition: ref_id in page_state.elements
+    - name: detail_non_empty
+      description: Detail must contain meaningful content
+      condition: len(detail) > 10
+
+  browser_interact:
+    - name: action_valid
+      description: Action must be one of the allowed enum values
+      condition: action in ['click', 'type', 'hover', 'scroll', 'screenshot']
+    - name: status_indicated
+      description: Response must include status field
+      condition: status in ['success', 'failure', 'error']
+
+# === ERROR HANDLING ===
+error_handling:
+  timeout: 30
+  retry_max: 2
+  retry_delay: 2
+  on_failure:
+    - log_error: "Browser action failed: {error}"
+    - return_error: true
+    - preserve_page_state: true
+
+# === STATE MUTATION ===
+state_mutation:
+  on_success:
+    action: append
+    key: recent_sessions
+    value_template:
+      session_id: "{{page_id}}"
+      action: "{{action}}"
+      status: "success"
+      timestamp: "{{ts}}"
+
+# === DEPENDENCIES ===
+dependencies:
+  - python3 >= 3.10
+  - playwright (pip install playwright)
+  - chromium-browser
+  - xvfb-run
+
+# === TRIAL VALIDATION SCHEMA ===
+# Each trial must produce:
+# {
+#   "trial_id": "string (ULID or UUID)",
+#   "ts": "ISO 8601 timestamp",
+#   "result": "integer (1=pass, 0=fail)",
+#   "target": "string (test case description)",
+#   "output": "string (atom output)",
+#   "gates_passed": "array of gate names",
+#   "gates_failed": "array of gate names"
+# }

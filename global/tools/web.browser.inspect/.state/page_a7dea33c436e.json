@@ -1,0 +1,807 @@
+{
+  "page_id": "page_a7dea33c436e",
+  "url": "https://en.wikipedia.org/wiki/Intelligent_agent",
+  "title": "Intelligent agent - Wikipedia",
+  "elements": [
+    {
+      "ref_id": "@e1",
+      "tag": "a",
+      "type": "a",
+      "text": "Learn to edit",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e2",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1 Russell and Norvig's classification",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e3",
+      "tag": "a",
+      "type": "a",
+      "text": "Page information",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e4",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e5",
+      "tag": "a",
+      "type": "a",
+      "text": "Cite this page",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e6",
+      "tag": "a",
+      "type": "a",
+      "text": "Help",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e7",
+      "tag": "a",
+      "type": "a",
+      "text": "machine learning",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e8",
+      "tag": "a",
+      "type": "a",
+      "text": "Community portal",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e9",
+      "tag": "a",
+      "type": "a",
+      "text": "Permanent link",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e10",
+      "tag": "a",
+      "type": "a",
+      "text": "4 Classes of intelligent agents",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e11",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e12",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1.1 Simple reflex agents",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e13",
+      "tag": "button",
+      "type": "button",
+      "text": "Toggle Classes of intelligent agents sub",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e14",
+      "tag": "a",
+      "type": "a",
+      "text": "perceives its environment",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e15",
+      "tag": "a",
+      "type": "a",
+      "text": "citation needed",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e16",
+      "tag": "a",
+      "type": "a",
+      "text": "Get shortened URL",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e17",
+      "tag": "a",
+      "type": "a",
+      "text": "knowledge",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e18",
+      "tag": "a",
+      "type": "a",
+      "text": "Recent changes",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e19",
+      "tag": "a",
+      "type": "a",
+      "text": "Related changes",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e20",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e21",
+      "tag": "a",
+      "type": "a",
+      "text": "3 Agent function",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e22",
+      "tag": "a",
+      "type": "a",
+      "text": "artificial intelligence",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e23",
+      "tag": "a",
+      "type": "a",
+      "text": "which?",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e24",
+      "tag": "a",
+      "type": "a",
+      "text": "",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e25",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1.2 Model-based reflex agents",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e26",
+      "tag": "a",
+      "type": "button",
+      "text": "Expand all",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e27",
+      "tag": "a",
+      "type": "a",
+      "text": "Upload file",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e28",
+      "tag": "a",
+      "type": "a",
+      "text": "What links here",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e29",
+      "tag": "a",
+      "type": "a",
+      "text": "Contact us",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e30",
+      "tag": "a",
+      "type": "a",
+      "text": "2 Objective function",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e31",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e32",
+      "tag": "a",
+      "type": "a",
+      "text": "Embodied agent",
+      "position": "center",
+      "selector": null
+    },
+    {
+      "ref_id": "@e33",
+      "tag": "a",
+      "type": "a",
+      "text": "Edit interlanguage links",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e34",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1.3 Goal-based agents",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e35",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e36",
+      "tag": "a",
+      "type": "a",
+      "text": "Special pages",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e37",
+      "tag": "a",
+      "type": "a",
+      "text": "About Wikipedia",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e38",
+      "tag": "a",
+      "type": "a",
+      "text": "Intelligent designer",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e39",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e40",
+      "tag": "a",
+      "type": "a",
+      "text": "1 Intelligent agents as the foundation o",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e41",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1.4 Utility-based agents",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e42",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e43",
+      "tag": "a",
+      "type": "a",
+      "text": "Random article",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e44",
+      "tag": "button",
+      "type": "button",
+      "text": "move to sidebar",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e45",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1.5 Learning agents",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e46",
+      "tag": "a",
+      "type": "a",
+      "text": "(Top)",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e47",
+      "tag": "a",
+      "type": "a",
+      "text": "Download as PDF",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e48",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e49",
+      "tag": "a",
+      "type": "a",
+      "text": "Current events",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e50",
+      "tag": "a",
+      "type": "a",
+      "text": "4.2 Weiss's classification",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e51",
+      "tag": "a",
+      "type": "a",
+      "text": "Printable version",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e52",
+      "tag": "a",
+      "type": "a",
+      "text": "Article",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e53",
+      "tag": "a",
+      "type": "a",
+      "text": "Talk",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e54",
+      "tag": "a",
+      "type": "a",
+      "text": "Read",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e55",
+      "tag": "a",
+      "type": "a",
+      "text": "Edit",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e56",
+      "tag": "a",
+      "type": "a",
+      "text": "View history",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e57",
+      "tag": "button",
+      "type": "button",
+      "text": "hide",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e58",
+      "tag": "button",
+      "type": "button",
+      "text": "hide",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e59",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e60",
+      "tag": "a",
+      "type": "a",
+      "text": "Contents",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e61",
+      "tag": "a",
+      "type": "a",
+      "text": "4.3 Other",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e62",
+      "tag": "a",
+      "type": "a",
+      "text": "agentic AI",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e63",
+      "tag": "a",
+      "type": "a",
+      "text": "Main page",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e64",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e65",
+      "tag": "a",
+      "type": "a",
+      "text": "5 Hierarchies of agents",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e66",
+      "tag": "a",
+      "type": "a",
+      "text": "Wikimedia Commons",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e67",
+      "tag": "button",
+      "type": "button",
+      "text": "Toggle Alternative definitions and uses ",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e68",
+      "tag": "button",
+      "type": "button",
+      "text": "move to sidebar",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e69",
+      "tag": "a",
+      "type": "a",
+      "text": "6 Alternative definitions and uses",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e70",
+      "tag": "a",
+      "type": "a",
+      "text": "Wikidata item",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e71",
+      "tag": "a",
+      "type": "a",
+      "text": "6.1 Agentic AI",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e72",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e73",
+      "tag": "a",
+      "type": "a",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e74",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e75",
+      "tag": "button",
+      "type": "button",
+      "text": "Search",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e76",
+      "tag": "a",
+      "type": "a",
+      "text": "Donate",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e77",
+      "tag": "a",
+      "type": "a",
+      "text": "Create account",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e78",
+      "tag": "a",
+      "type": "a",
+      "text": "Log in",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e79",
+      "tag": "a",
+      "type": "a",
+      "text": "thermostat",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e80",
+      "tag": "a",
+      "type": "a",
+      "text": "control system",
+      "position": "bottom",
+      "selector": null
+    },
+    {
+      "ref_id": "@e81",
+      "tag": "button",
+      "type": "button",
+      "text": "hide",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e82",
+      "tag": "a",
+      "type": "a",
+      "text": "Search",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e83",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e84",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e85",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e86",
+      "tag": "a",
+      "type": "a",
+      "text": "Donate",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e87",
+      "tag": "a",
+      "type": "a",
+      "text": "Create account",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e88",
+      "tag": "a",
+      "type": "a",
+      "text": "Log in",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e89",
+      "tag": "button",
+      "type": "button",
+      "text": "move to sidebar",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e90",
+      "tag": "input",
+      "type": "button",
+      "text": "",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e91",
+      "tag": "a",
+      "type": "a",
+      "text": "Afrikaans",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e92",
+      "tag": "a",
+      "type": "a",
+      "text": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e93",
+      "tag": "a",
+      "type": "a",
+      "text": "\u0411\u044a\u043b\u0433\u0430\u0440\u0441\u043a\u0438",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e94",
+      "tag": "a",
+      "type": "a",
+      "text": "\u09ac\u09be\u0982\u09b2\u09be",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e95",
+      "tag": "a",
+      "type": "a",
+      "text": "Catal\u00e0",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e96",
+      "tag": "a",
+      "type": "a",
+      "text": "Deutsch",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e97",
+      "tag": "a",
+      "type": "a",
+      "text": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e98",
+      "tag": "a",
+      "type": "a",
+      "text": "Espa\u00f1ol",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e99",
+      "tag": "a",
+      "type": "a",
+      "text": "\u0641\u0627\u0631\u0633\u06cc",
+      "position": "top",
+      "selector": null
+    },
+    {
+      "ref_id": "@e100",
+      "tag": "a",
+      "type": "a",
+      "text": "Fran\u00e7ais",
+      "position": "top",
+      "selector": null
+    }
+  ]
+}

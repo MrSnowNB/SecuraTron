@@ -106,11 +106,28 @@ def get_interactive_elements(page, include_images=False, max_elements=100):
 
                     let text = (el.textContent || '').trim().replace(/\\s+/g, ' ').substring(0, 40);
 
+                    // Capture additional attributes for input elements
+                    let meta = {};
+                    if (el.tagName.toLowerCase() === 'input') {
+                        meta = {
+                            input_type: el.type || null,
+                            input_name: el.name || null,
+                            input_id: el.id || null,
+                            placeholder: (el.getAttribute('placeholder') || '').substring(0, 50),
+                            role: el.getAttribute('role') || null
+                        };
+                    } else if (el.tagName.toLowerCase() === 'button') {
+                        meta = {
+                            button_type: el.type || null,
+                            input_id: el.id || null
+                        };
+                    }
+
                     // Score: visible elements get higher score (lower number = better)
                     const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
                     const score = isVisible ? distFromCenter : 99999;
 
-                    return { ref_id: '@e' + (index + 1), tag: el.tagName.toLowerCase(), text, type, position, score };
+                    return { ref_id: '@e' + (index + 1), tag: el.tagName.toLowerCase(), text, type, position, score, meta };
                 });
 
                 // Sort: viewport-visible first (by proximity to center), then off-screen
@@ -122,7 +139,8 @@ def get_interactive_elements(page, include_images=False, max_elements=100):
                     tag: e.tag,
                     text: e.text,
                     type: e.type,
-                    position: e.position
+                    position: e.position,
+                    meta: e.meta
                 }));
             }
         """, max_elements)
@@ -195,6 +213,13 @@ def inspect_page(url, max_summary_chars=500, include_interactive=True, include_i
                 "interactive_elements": elements,
                 "ts": datetime.now(timezone.utc).isoformat()
             }
+            
+            # Save element mapping for drill/interact tools
+            try:
+                from state_store import save_page_state
+                save_page_state(page_id, url, title, elements)
+            except Exception:
+                pass  # Non-critical — drill/interact will re-scan if missing
             
             return output, browser, context, page
             

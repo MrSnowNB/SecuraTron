@@ -257,9 +257,9 @@ def _resolve_template(value, molecule_inputs, steps_results):
     """Recursively resolve template expressions in a value.
 
     Supports:
-    - {{inputs.X}} → molecule input value
-    - {{steps.X.result}} → full result JSON string
-    - {{steps.X.result.Y}} → individual result field
+    - {{inputs.X}} -> molecule input value
+    - {{steps.X.result}} -> full result JSON string
+    - {{steps.X.result.Y}} -> individual result field
 
     Works on strings, dicts, and lists (recursively).
     """
@@ -290,6 +290,76 @@ def _resolve_template(value, molecule_inputs, steps_results):
     else:
         return value
 
+
+def _resolve_condition(condition_str, steps_results):
+    """Resolve a condition string against prior step results.
+
+    Unlike _resolve_template (which converts step results to JSON),
+    this function resolves {{steps.X.result}} to the actual Python
+    result object so the evaluator can inspect its contents.
+
+    Returns the resolved value (dict, list, str, etc.).
+    """
+    result = condition_str
+
+    # Replace {{steps.X.result}} with the actual Python result object
+    for step_name, step_res in steps_results.items():
+        pattern = "{{" + f"steps.{step_name}.result" + "}}"
+        if pattern in result:
+            actual_result = step_res.get("result")
+            if actual_result is None:
+                actual_result = {}
+            # Escape any single quotes in the dict repr for safe eval
+            repr_str = repr(actual_result)
+            result = result.replace(pattern, repr_str)
+
+    return result
+
+
+def _evaluate_condition(resolved_condition):
+    """Evaluate a resolved condition and return True/False.
+
+    Strategy:
+    1. Try eval() for expression-style conditions
+       (e.g. '{{steps.X.result.port22_open}}' or '{{steps.X.result}}'))
+    2. If eval produces a non-string (dict/list/int/None), return bool(value).
+    3. If eval produces a string, evaluate as a boolean expression.
+
+    A condition is considered TRUE if its resolved value is truthy.
+    A condition is considered FALSE (step skipped) if its resolved
+    value is falsy (None, empty string, empty dict/list, 0, False).
+    """
+    if not isinstance(resolved_condition, str):
+        # Already resolved to a Python object (dict, list, etc.)
+        return bool(resolved_condition)
+
+    # Try to evaluate as a Python expression
+    try:
+        value = eval(resolved_condition)
+        # If eval returns a non-string (dict, list, int, etc.),
+        # return its truthiness directly
+        if not isinstance(value, str):
+            return bool(value)
+        # String result: check for known falsy/truthy keywords first
+        # (eval('false') raises NameError since Python uses 'False')
+        lower_val = value.lower()
+        if lower_val in ('false', 'none', 'null', '[]', '{}', '0', ''):
+            return False
+        if lower_val in ('true', '1'):
+            return True
+        # Non-empty, non-keyword string -> truthy
+        return bool(value)
+    except (NameError, SyntaxError, AttributeError, KeyError, IndexError):
+        # eval failed — the condition string is not a valid expression
+        # Check for common falsy keywords before falling back to truthiness
+        lower_raw = resolved_condition.lower()
+        if lower_raw in ('false', 'none', 'null', '[]', '{}', '0', ''):
+            return False
+        if lower_raw in ('true', '1'):
+            return True
+        return bool(resolved_condition)
+
+
 def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> dict:
     """Execute a molecule by orchestrating its DAG of atoms."""
     dag = card["implementation"]["dag"]
@@ -304,7 +374,26 @@ def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> 
     
     for step_id in execution_order:
         step_config = dag[step_id]
-        atom_id = step_config["atom"]
+        atom_id = step_config.get("atom")
+        
+        # Check condition gate before executing the step
+        condition_str = step_config.get("condition")
+        if condition_str:
+            resolved_condition = _resolve_condition(condition_str, steps_results)
+            condition_met = _evaluate_condition(resolved_condition)
+            if not condition_met:
+                steps_results[step_id] = {
+                    "ok": True,
+                    "result": None,
+                    "status": "skipped",
+                    "reason": f"condition_not_met: {condition_str}"
+                }
+                continue
+        
+        # Skip non-atom steps (analysis/evaluation types)
+        if not atom_id:
+            continue
+            
         if atom_id not in CARDS:
             return {"ok": False, "reason": f"atom_not_found: {atom_id}", "step": step_id}
         
@@ -320,10 +409,22 @@ def run_molecule(card: dict, inputs: dict, project_id: str, session_id: str) -> 
             return {"ok": False, "reason": "step_failed", "step": step_id, "error": res}
         steps_results[step_id] = res
         
+    # Build step status list (including skipped steps)
+    all_steps = []
+    for sid in execution_order:
+        sr = steps_results.get(sid, {})
+        status = sr.get("status", "success")
+        entry = {"step_id": sid, "status": status}
+        if status == "skipped":
+            entry["reason"] = sr.get("reason", "unknown")
+        elif status == "success":
+            entry["result"] = sr.get("result")
+        all_steps.append(entry)
+    
     return {
         "ok": True,
         "result": steps_results.get(list(dag.keys())[-1], {}).get("result"),
-        "steps": [{"step_id": sid, "status": "success", "result": steps_results[sid]} for sid in execution_order]
+        "steps": all_steps
     }
 
 def cli_memory_precheck(args):

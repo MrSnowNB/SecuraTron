@@ -6,7 +6,7 @@ description: >
   Outputs cracked pairs in JSON format to stdout and file.
 id: auth.hydra
 implementation:
-  cmd: hydra -L {user_list} -P {pass_list} {service}://{target} -t 4 -b json -o {output_file} -q
+  cmd: hydra -L {user_list} -P {pass_list} {service}://{target}:{port} -t 4 -b json -o {output_file} -q
   kind: shell
 inputs:
   user_list:
@@ -34,6 +34,12 @@ inputs:
     required: false
     type: integer
     description: Optional non-standard port. If set, injected into the service URI.
+    default: 65534
+  service:
+    required: false
+    type: string
+    description: Hydra service module (e.g., ssh, ftp, http-head).
+    default: http-head
 kind: atom
 outputs:
   type: shell.run.v1

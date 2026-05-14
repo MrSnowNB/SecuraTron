@@ -12,11 +12,26 @@ SecuraTron is built on three foundational pillars:
 - **Tier 2 (Cold):** Immutable, append-only JSONL ledgers and Markdown post-mortems (Source of Truth).
 
 ### 2. The Gated Dispatch Engine
-- **Atoms:** Atomic tool wrappers (e.g., `kali.nmap`, `web.nikto`).
-- **Molecules:** Composed DAG workflows (e.g., `recon.host.full`) with topological sorting and recursive template resolution.
+- **Atoms:** Atomic tool wrappers (e.g., `kali.nmap`, `auth.hydra`).
+- **Molecules:** Composed DAG workflows (e.g., `recon.host.full`, `auth.network.spray`) with topological sorting and recursive template resolution.
+- **Conditional Execution:** Support for dynamic gating within molecules. Steps can define a `condition` field that evaluates Python expressions or prior step results (e.g., `{{steps.port_scan.result.port22_open}}`). Falsy or unfulfilled conditions cause the engine to mark the step as `skipped`.
 - **The Gate:** Strict enforcement of project scope, input validation, and execution preconditions.
 
-### 3. The Self-Improvement Loop (SIL)
+## Key Skills & Tools
+
+### `auth.hydra` (Atom)
+- **Capability:** High-speed network authentication brute-forcing.
+- **Inputs:** `target`, `service` (ssh, ftp, etc.), `user_list`, `pass_list`.
+- **Output:** Structured JSON results of successful credential finds.
+
+### `auth.network.spray` (Molecule)
+- **Capability:** Multi-stage credential auditing.
+- **Workflow:** 
+    1. **Port Scan:** Identifies open management ports.
+    2. **SSH/FTP Spray:** Conditionally executes brute-force attacks ONLY if respective ports are open.
+    3. **Save Findings:** Persists results to memory if credentials are recovered.
+
+### 4. Persistent State Management
 - **Observe:** Automatic failure classification into a canonical taxonomy (FM-1 to FM-11).
 - **Extract:** Pattern detection across trial ledgers to identify recurring bottlenecks.
 - **Act:** Formal Improvement Tickets (IT-NNN) track fixes to cards, parsers, or engine logic.

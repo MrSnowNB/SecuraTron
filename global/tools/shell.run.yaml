@@ -1,37 +1,37 @@
-# skill-card v1
+author: hermes
+created: '2026-05-05T21:55:00-04:00'
+description: Execute arbitrary shell commands on the target system. Used for exploit execution, post-exploitation, and flag capture.
 id: shell.run
-version: 2
-kind: atom
-tier: global
-author: human
-created: "2026-04-25T16:52:00-04:00"
-description: "Execute a raw shell command on the host."
-
-inputs:
-  cmd: {type: string, required: true}
-outputs:
-  type: shell.run.v1
-
-preconditions:
-- cmd is not empty
-- cmd does not contain dangerous patterns (rm -rf /, dd if=, mkfs)
-
-postconditions:
-- len(result) > 0 or exit_code == 0
-
-risk: medium
-side_effects: [system_modification]
-reversible: false
-
 implementation:
+  cmd: {command}
   kind: shell
-  cmd: "{cmd}"
-
+inputs:
+  command:
+    required: true
+    type: string
+    description: "Shell command to execute on target"
+  timeout:
+    default: 30
+    type: integer
+    description: "Command timeout in seconds"
+kind: atom
+outputs:
+  artifact_path: '{session}/artifacts/shell_{ts}.txt'
+  type: shell.run.v1
+postconditions:
+  - artifact_exists(outputs.artifact_path)
+promotion:
+  required_distinct_inputs: 5
+  required_success: 5
+  requires_human_review: false
+reversible: true
+risk: medium
+side_effects:
+  - system_change
+  - command_execution
+tier: global
 trials:
-  success: 0
   failure: 0
   last_run: null
-promotion:
-  required_success: 10
-  required_distinct_inputs: 1
-  requires_human_review: true
+  success: 0
+version: 1

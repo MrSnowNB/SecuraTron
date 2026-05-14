@@ -1,0 +1,103 @@
+{
+  "page_id": "page_0ce8877a69ce",
+  "url": "https://en.wikipedia.org/wiki/Intelligent_agent",
+  "title": "Intelligent agent - Wikipedia",
+  "elements": [
+    {
+      "ref_id": "@e1",
+      "tag": "a",
+      "type": "a",
+      "text": "Learn to edit",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e2",
+      "tag": "a",
+      "type": "a",
+      "text": "4.1 Russell and Norvig's classification",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e3",
+      "tag": "a",
+      "type": "a",
+      "text": "Page information",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e4",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "meta": {
+        "input_type": "radio",
+        "input_name": "skin-client-pref-vector-feature-limited-width-group",
+        "input_id": "skin-client-pref-vector-feature-limited-width-value-1",
+        "placeholder": "",
+        "role": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e5",
+      "tag": "a",
+      "type": "a",
+      "text": "Cite this page",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e6",
+      "tag": "a",
+      "type": "a",
+      "text": "Help",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e7",
+      "tag": "a",
+      "type": "a",
+      "text": "machine learning",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e8",
+      "tag": "a",
+      "type": "a",
+      "text": "Community portal",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e9",
+      "tag": "a",
+      "type": "a",
+      "text": "Permanent link",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e10",
+      "tag": "a",
+      "type": "a",
+      "text": "4 Classes of intelligent agents",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    }
+  ]
+}

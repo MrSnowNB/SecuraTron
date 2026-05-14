@@ -27,7 +27,7 @@ inputs:
     validator: rfc1123_host_or_ip
     description: Target hostname or IP address.
   output_file:
-    default: '{session}/artifacts/hydra-{ts}.json'
+    default: '{base_dir}/sessions/{session}/artifacts/hydra-{ts}.json'
     type: string
     description: Path to write JSON results.
   port:
@@ -37,7 +37,7 @@ inputs:
 kind: atom
 outputs:
   type: shell.run.v1
-  artifact_path: '{session}/artifacts/hydra-{ts}.json'
+  artifact_path: '{base_dir}/sessions/{session}/artifacts/hydra-{ts}.json'
 postconditions:
 - artifact_exists(outputs.artifact_path)
 preconditions:

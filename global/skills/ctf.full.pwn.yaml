@@ -1,0 +1,210 @@
+author: hermes
+created: '2026-05-05T21:55:00-04:00'
+description: >
+  End-to-end CTF machine compromise molecule. Orchestrates full recon,
+  web assault, privilege escalation, and flag capture in a single gated
+  pipeline. The autonomous agent's primary attack chain.
+id: ctf.full.pwn
+kind: molecule
+tier: global
+version: 1
+
+implementation:
+  kind: compose
+  dag:
+    phase1_recon:
+      atom: ctf.recon.full
+      inputs:
+        target: '{{inputs.target}}'
+    phase1_record:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/phase1_recon.json'
+        data:
+          phase: 'recon'
+          target: '{{inputs.target}}'
+          results: '{{steps.phase1_recon.result}}'
+      depends_on:
+        - phase1_recon
+    phase2_web:
+      atom: ctf.web.assault
+      inputs:
+        target: '{{inputs.target}}'
+        exploit_search_term: '{{inputs.exploit.web_search_term}}'
+        exploit_command: '{{inputs.exploit.web_command}}'
+      depends_on:
+        - phase1_record
+    phase2_record:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/phase2_web.json'
+        data:
+          phase: 'web_exploit'
+          target: '{{inputs.target}}'
+          results: '{{steps.phase2_web.result}}'
+      depends_on:
+        - phase2_web
+    phase3_privesc:
+      atom: ctf.priv_esc
+      inputs:
+        target: '{{inputs.target}}'
+        exploit_search_term: '{{inputs.exploit.privesc_search_term}}'
+        exploit_command: '{{inputs.exploit.privesc_command}}'
+      depends_on:
+        - phase2_record
+    phase3_record:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/phase3_privesc.json'
+        data:
+          phase: 'privilege_escalation'
+          target: '{{inputs.target}}'
+          results: '{{steps.phase3_privesc.result}}'
+      depends_on:
+        - phase3_privesc
+    phase4_final:
+      atom: shell.run
+      inputs:
+        command: |
+          echo "=== CTF FINAL STATE ==="
+          id
+          hostname
+          cat /home/*/*/user.txt 2>/dev/null || echo "No user.txt found"
+          cat /root/root.txt 2>/dev/null || echo "No root.txt found"
+          find / -name "*flag*" -type f 2>/dev/null | head -10
+      depends_on:
+        - phase3_record
+    phase4_record:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/phase4_final.json'
+        data:
+          phase: 'final_state'
+          target: '{{inputs.target}}'
+          results: '{{steps.phase4_final.result}}'
+      depends_on:
+        - phase4_final
+
+inputs:
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+    description: "Target IP or hostname"
+  exploit:
+    type: object
+    description: "Optional pre-identified exploits"
+    properties:
+      web_search_term:
+        type: string
+        description: "Exploit-DB search term for web vulns"
+      web_command:
+        type: string
+        description: "Web exploit command"
+      privesc_search_term:
+        type: string
+        description: "Exploit-DB search term for privesc"
+      privesc_command:
+        type: string
+        description: "Privesc exploit command"
+
+outputs:
+  type: ctf.full.pwn.v1
+
+doctrine:
+  purpose: >
+    Complete CTF machine compromise pipeline. This molecule is the
+    agent's primary tool for autonomous CTF competition. It runs all
+    phases sequentially with gated handoffs between phases.
+  
+  execution_graph:
+    description: >
+      Four-phase pipeline with state persistence between phases.
+      Each phase must complete successfully before the next begins.
+      Operator approval gates apply at web exploit and privesc steps.
+    
+    phases:
+      - name: Phase 1 — Recon
+        description: >
+          Full-stack reconnaissance: nmap port scan, web fingerprint,
+          directory enumeration, Nikto vuln scan, and browser inspection.
+        atom: ctf.recon.full
+        gate: auto (information gathering, no risk)
+      
+      - name: Phase 2 — Web Assault
+        description: >
+          Attack identified web vulnerabilities: search exploit-db,
+          execute exploits, capture web-based flags.
+        atom: ctf.web.assault
+        gate: operator_approval (exploit execution)
+      
+      - name: Phase 3 — Privilege Escalation
+        description: >
+          Post-exploitation enumeration and privesc: SUID, cron,
+          kernel exploits, sudo abuse, Docker escape.
+        atom: ctf.priv_esc
+        gate: operator_approval (privilege escalation)
+      
+      - name: Phase 4 — Final State
+        description: >
+          Capture all flags, document final system state,
+          verify complete compromise.
+        atom: shell.run + mem.write_session
+        gate: auto
+
+  decision_tree:
+    description: >
+      After each phase, the agent evaluates success and decides next step.
+      
+      Phase 1 → Phase 2: If web services found and vulnerabilities identified
+      Phase 2 → Phase 3: If initial foothold achieved (shell, admin access)
+      Phase 3 → Phase 4: If privilege escalation successful
+      Any phase → ABORT: If critical error or operator intervention needed
+
+  success_criteria:
+    - "At least one flag captured (user.txt or root.txt)"
+    - "Complete attack chain documented in session findings"
+    - "Final system state recorded"
+
+  safety_gates:
+    - gate: operator_approval_web_exploit
+      description: "Exploit execution on web services requires operator approval"
+      applies_to: ctf.web.assault
+    - gate: operator_approval_privesc
+      description: "Privilege escalation requires operator approval"
+      applies_to: ctf.priv_esc
+    - gate: no_lateral_movement
+      description: "No pivoting to other hosts without authorization"
+      applies_to: all phases
+    - gate: no_destruction
+      description: "No destructive commands without explicit approval"
+      applies_to: all phases
+
+prerequisites:
+  - ctf.recon.full
+  - ctf.web.assault
+  - ctf.priv_esc
+  - exploit.db.search
+  - post.exploit.recon
+  - shell.run
+  - mem.write_session
+
+preconditions:
+  - scope.includes(inputs.target)
+
+promotion:
+  required_distinct_inputs: 5
+  required_success: 3
+  requires_human_review: true
+
+reversible: true
+risk: high
+side_effects:
+  - full_system_compromise
+  - privilege_escalation
+  - data_exfiltration
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

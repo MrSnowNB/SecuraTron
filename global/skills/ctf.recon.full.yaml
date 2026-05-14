@@ -1,0 +1,149 @@
+author: hermes
+created: '2026-05-05T21:55:00-04:00'
+description: >
+  Full CTF reconnaissance molecule — chains nmap, whatweb, gobuster, nikto,
+  and browser.inspect into a single automated recon pass. Correlates findings
+  and outputs a prioritized attack surface map.
+id: ctf.recon.full
+kind: molecule
+tier: global
+version: 1
+
+implementation:
+  kind: compose
+  dag:
+    network_scan:
+      atom: kali.nmap
+      inputs:
+        flags: '-F -sV -Pn -T3'
+        target: '{{inputs.target}}'
+    web_fingerprint:
+      atom: web.whatweb
+      inputs:
+        url: 'http://{{inputs.target}}:80'
+      depends_on:
+        - network_scan
+      condition: 'steps.network_scan.result.ports contains 80 or 443'
+    dir_enumeration:
+      atom: web.gobuster
+      inputs:
+        target: '{{inputs.target}}'
+        flags: '-f --no-error -q -t 10'
+      depends_on:
+        - network_scan
+      condition: 'steps.network_scan.result.ports contains 80'
+    vuln_scan:
+      atom: web.nikto
+      inputs:
+        host: '{{inputs.target}}'
+        port: '80'
+      depends_on:
+        - network_scan
+      condition: 'steps.network_scan.result.ports contains 80'
+    browser_recon:
+      atom: web.browser.inspect
+      inputs:
+        url: 'http://{{inputs.target}}:80'
+        max_summary_chars: 300
+        include_interactive: true
+        include_images: false
+      depends_on:
+        - network_scan
+      condition: 'steps.network_scan.result.ports contains 80'
+    record_findings:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/recon_full.json'
+        data:
+          molecule: ctf.recon.full
+          target: '{{inputs.target}}'
+          timestamp: '{{now}}'
+          network_scan: '{{steps.network_scan.result}}'
+          web_fingerprint: '{{steps.web_fingerprint.result}}'
+          dir_enumeration: '{{steps.dir_enumeration.result}}'
+          vuln_scan: '{{steps.vuln_scan.result}}'
+          browser_recon: '{{steps.browser_recon.result}}'
+      depends_on:
+        - network_scan
+        - web_fingerprint
+        - dir_enumeration
+        - vuln_scan
+        - browser_recon
+
+inputs:
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+    description: "Target IP or hostname"
+
+outputs:
+  type: ctf.recon.full.v1
+
+prerequisites:
+  - kali.nmap
+  - web.whatweb
+  - web.gobuster
+  - web.nikto
+  - web.browser.inspect
+  - mem.write_session
+
+doctrine:
+  purpose: >
+    Automated full-stack reconnaissance against a CTF target.
+    Runs all available recon tools in parallel where possible,
+    then correlates findings into a unified attack surface map.
+  
+  execution_graph:
+    steps:
+      - step: 1
+        name: network_scan
+        description: >
+          Fast port scan with service version detection. -F flag limits to
+          top 100 ports. -sV fingerprints services. -Pn skips host discovery
+          (assumes target is alive).
+      - step: 2
+        name: web_fingerprint
+        description: >
+          Identify web technologies (CMS, framework, language, server).
+          Only runs if HTTP ports detected.
+      - step: 3
+        name: dir_enumeration
+        description: >
+          Discover hidden directories and files using Gobuster.
+          Uses small wordlist first for speed.
+      - step: 4
+        name: vuln_scan
+        description: >
+          Run Nikto against web server for known vulnerabilities,
+          misconfigurations, and outdated software.
+      - step: 5
+        name: browser_recon
+        description: >
+          Browser-based inspection for JS-rendered content,
+          login forms, API endpoints, and authentication flows.
+
+  success_gate:
+    description: >
+      At least one recon source must produce findings.
+      All available tools should run based on detected services.
+
+preconditions:
+  - scope.includes(inputs.target)
+  - network.reachable(inputs.target)
+
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: false
+
+reversible: true
+risk: low
+side_effects:
+  - network_probe
+  - information_gather
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

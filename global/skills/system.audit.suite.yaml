@@ -1,0 +1,37 @@
+author: hermes
+created: '2026-05-13T20:30:00-04:00'
+description: >
+  Autonomous CI/CD audit pipeline. Discovers all SecuraTron atoms and molecules,
+  executes each against a safe baseline (127.0.0.1), verifies outputs, and
+  generates a cryptographically-logged evidence report in the Evidence Locker.
+  Every tool must pass to achieve a green audit.
+id: system.audit.suite
+implementation:
+  cmd: python3 {runner_script}
+  kind: shell
+inputs:
+  runner_script:
+    default: ~/.securatron/global/bin/audit_runner.py
+    description: Path to the audit runner Python script.
+    type: string
+kind: molecule
+outputs:
+  type: system.audit.suite.v1
+postconditions:
+- result.total is not null
+preconditions:
+- scope.includes("system")
+promotion:
+  required_distinct_inputs: 0
+  required_success: 1
+  requires_human_review: false
+reversible: true
+risk: low
+side_effects:
+- file_write
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0
+version: 1

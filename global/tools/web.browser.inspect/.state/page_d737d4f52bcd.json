@@ -1,0 +1,103 @@
+{
+  "page_id": "page_d737d4f52bcd",
+  "url": "https://en.wikipedia.org/wiki/Cybernetics",
+  "title": "Cybernetics - Wikipedia",
+  "elements": [
+    {
+      "ref_id": "@e1",
+      "tag": "a",
+      "type": "a",
+      "text": "Learn to edit",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e2",
+      "tag": "a",
+      "type": "a",
+      "text": "[2]",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e3",
+      "tag": "a",
+      "type": "a",
+      "text": "3.3 Third wave",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e4",
+      "tag": "a",
+      "type": "a",
+      "text": "Page information",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e5",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "meta": {
+        "input_type": "radio",
+        "input_name": "skin-client-pref-vector-feature-limited-width-group",
+        "input_id": "skin-client-pref-vector-feature-limited-width-value-1",
+        "placeholder": "",
+        "role": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e6",
+      "tag": "a",
+      "type": "a",
+      "text": "",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e7",
+      "tag": "a",
+      "type": "a",
+      "text": "system",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e8",
+      "tag": "a",
+      "type": "a",
+      "text": "Cite this page",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e9",
+      "tag": "a",
+      "type": "a",
+      "text": "[3]",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e10",
+      "tag": "a",
+      "type": "a",
+      "text": "Help",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    }
+  ]
+}

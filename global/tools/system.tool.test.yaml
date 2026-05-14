@@ -1,0 +1,50 @@
+author: hermes
+created: '2026-05-13T20:30:00-04:00'
+description: Execute a SecuraTron atom or molecule with safe mock data and verify its output. Used by the audit suite CI/CD pipeline to test all tools against a safe baseline.
+id: system.tool.test
+implementation:
+  cmd: python3 {runner_script} {tool_id} {tool_kind} {evidence_dir} {project_id}
+  kind: shell
+inputs:
+  evidence_dir:
+    default: ~/.securatron/global/evidence/locker
+    description: Directory to store test evidence artifacts.
+    type: string
+  project_id:
+    default: lab-internal
+    description: Project ID to use for dispatch.
+    type: string
+  runner_script:
+    default: ~/.securatron/global/bin/tool_test_runner.py
+    description: Path to the Python test runner script.
+    type: string
+  tool_id:
+    description: Atom or molecule ID to test.
+    required: true
+    type: string
+  tool_kind:
+    default: atom
+    description: Kind of tool to test — 'atom' or 'molecule'.
+    type: string
+kind: atom
+outputs:
+  type: system.tool.test.v1
+postconditions:
+- exit_code == 0
+- result.tool_id is not empty
+preconditions:
+- scope.includes(inputs.tool_id)
+promotion:
+  required_distinct_inputs: 5
+  required_success: 3
+  requires_human_review: false
+reversible: true
+risk: low
+side_effects:
+- file_write
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0
+version: 1

@@ -30,13 +30,13 @@ implementation:
           molecule: web.recon.explore
           target_url: '{{inputs.target_url}}'
           page_id: '{{steps.lay_of_land.result.page_id}}'
-          interactive_elements: '{{steps.lay_of_land.result.interactive_elements}}'
+          interactive_elements: '{{steps.lay_of_land.result.elements}}'
     candidate_drill:
       atom: web.browser.drill
       inputs:
-        page_id: '{{steps.lay_of_land.result.page_id}}'
-        ref_id: '{{candidate.ref_id}}'
         url: '{{inputs.target_url}}'
+        selector: '{{candidate.ref_id}}'
+        selector_type: 'ref'
       depends_on:
         - auth_vector_scan
     decision_gate:
@@ -48,7 +48,7 @@ implementation:
           target_url: '{{inputs.target_url}}'
           phase: 'decision'
           auth_boundaries_found: '"true | false"'
-          candidates_validated: '{{candidate_drill.results}}'
+          candidates_validated: '{{steps.candidate_drill.result.element}}'
           next_action: '"interact" | "confirm_static" | "escalate"'
           requires_operator_approval: true
       depends_on:
@@ -56,10 +56,10 @@ implementation:
     interact_action:
       atom: web.browser.interact
       inputs:
-        page_id: '{{steps.lay_of_land.result.page_id}}'
+        url: '{{inputs.target_url}}'
+        selector: '{{candidate.ref_id}}'
         action: '{{inputs.interact_action_type}}'
-        ref_id: '{{candidate.ref_id}}'
-        text: '{{inputs.interact_text}}'
+        value: '{{inputs.interact_text}}'
       depends_on:
         - decision_gate
 
@@ -132,7 +132,7 @@ doctrine:
           * sso_buttons — buttons/links with Google, GitHub, SSO, OIDC, OAuth
           * search_params — inputs with name*=q/name*=search
           * registration — forms with action*=register/signup/create
-        input: '{{steps.lay_of_land.result.interactive_elements}}'
+        input: '{{steps.lay_of_land.result.elements}}'
         output: auth_candidates (list of {ref_id, type, confidence})
         gates:
           - condition: auth_candidates is not empty
@@ -146,9 +146,10 @@ doctrine:
           Use drill on candidate ref_ids to confirm their DOM structure.
           Verifies element types, input attributes, form action URLs,
           and parent context. Drills up to 5 candidates.
-        input:
-          page_id: '{{steps.lay_of_land.result.page_id}}'
-          ref_id: '{{candidate.ref_id}}'
+        inputs:
+          url: '{{inputs.target_url}}'
+          selector: '{{candidate.ref_id}}'
+          selector_type: 'ref'
         output_key: candidate_drill
         gates:
           - condition: result.detail is dict and len(str(result.detail)) > 10

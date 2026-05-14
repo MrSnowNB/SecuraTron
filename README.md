@@ -12,24 +12,32 @@ SecuraTron is built on three foundational pillars:
 - **Tier 2 (Cold):** Immutable, append-only JSONL ledgers and Markdown post-mortems (Source of Truth).
 
 ### 2. The Gated Dispatch Engine
-- **Atoms:** Atomic tool wrappers (e.g., `kali.nmap`, `auth.hydra`).
-- **Molecules:** Composed DAG workflows (e.g., `recon.host.full`, `auth.network.spray`) with topological sorting and recursive template resolution.
-- **Conditional Execution:** Support for dynamic gating within molecules. Steps can define a `condition` field that evaluates Python expressions or prior step results (e.g., `{{steps.port_scan.result.port22_open}}`). Falsy or unfulfilled conditions cause the engine to mark the step as `skipped`.
+- **Atoms:** Atomic tool wrappers (e.g., `kali.nmap`, `auth.hydra`, `web.browser.inspect`, `exploit.search`).
+- **Molecules:** Composed DAG workflows (e.g., `recon.host.full`, `auth.network.spray`, `ctf.full.pwn`) with topological sorting and recursive template resolution.
+- **Conditional Execution:** Support for dynamic gating within molecules. Steps can define a `condition` field that evaluates Python expressions or prior step results (e.g., `{{steps.port_scan.result.port_22_open}}`). Supports nested key access (e.g., `{{steps.X.result.data.key}}`) and Python-style truthiness.
 - **The Gate:** Strict enforcement of project scope, input validation, and execution preconditions.
 
 ## Key Skills & Tools
 
-### `auth.hydra` (Atom)
-- **Capability:** High-speed network authentication brute-forcing.
-- **Inputs:** `target`, `service` (ssh, ftp, etc.), `user_list`, `pass_list`.
-- **Output:** Structured JSON results of successful credential finds.
-
-### `auth.network.spray` (Molecule)
-- **Capability:** Multi-stage credential auditing.
+### `ctf.full.pwn` (Molecule)
+- **Capability:** End-to-end machine compromise.
 - **Workflow:** 
-    1. **Port Scan:** Identifies open management ports.
-    2. **SSH/FTP Spray:** Conditionally executes brute-force attacks ONLY if respective ports are open.
-    3. **Save Findings:** Persists results to memory if credentials are recovered.
+    1. **Recon:** Service discovery and version fingerprinting.
+    2. **Web Assault:** Automated vulnerability scanning and exploit attempt.
+    3. **PrivEsc:** Local reconnaissance and privilege escalation vector detection.
+    4. **Persistence:** Credential extraction and session persistence.
+
+### `web.browser.inspect` / `interact` / `drill` (Atoms)
+- **Capability:** Multi-modal browser automation and element-level analysis.
+- **Output:** Structured DOM analysis, interaction results, and visual context.
+
+### `exploit.search` (Atom)
+- **Capability:** Structured exploit database (Searchsploit) searching.
+- **Output:** Parsed CVEs, exploit paths, and CVSS scores.
+
+### `post.exploit.recon` (Atom)
+- **Capability:** Automated post-exploitation system analysis.
+- **Output:** Identity, sudo rules, SUID binaries, and identified priv-esc vectors.
 
 ### 4. Persistent State Management
 - **Observe:** Automatic failure classification into a canonical taxonomy (FM-1 to FM-11).

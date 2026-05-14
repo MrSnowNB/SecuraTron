@@ -97,16 +97,21 @@ The state file should be:
 - **Validated** - Run validation after updates to ensure the structure is correct
 - **Compressed** - Keep the file size under 10KB by archiving old data
 
-## Verification (May 2, 2026)
+## Verification (May 6, 2026)
 
-The state management system has been verified through a 5-phase gated validation suite:
+The state management system has been re-verified after cleaning test artifacts
+from the previous test run (May 2). All 12 tests passed:
+
 - **Phase 1 (Core):** Read/Write/Append/Delete operations confirmed.
 - **Phase 2 (Sync):** Session success/fail sync with counter updates confirmed.
 - **Phase 3 (Compaction):** State survival through simulated context loss confirmed.
 - **Phase 4 (Automation):** Cron job integration confirmed.
 - **Phase 5 (Errors):** Graceful error handling for invalid keys/actions confirmed.
 
-**Result:** PASS (14/14 tests). See `projects/lab-internal/STATE_TEST_REPORT.md` for details.
+**Result:** PASS (12/12 tests). See `projects/lab-internal/STATE_TEST_REPORT.md` for details.
+
+**Note:** 14 tests ran on May 2, 12 tests run on May 6 (T3.2 was merged as
+a sub-check). Test artifacts fully cleaned after both runs.
 
 ## Future Enhancements (Post-Test)
 

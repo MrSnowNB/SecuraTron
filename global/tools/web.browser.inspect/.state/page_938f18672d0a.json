@@ -1,0 +1,154 @@
+{
+  "page_id": "page_938f18672d0a",
+  "url": "https://app.hackthebox.com/machines/Meow?sort_by=created_at&sort_type=desc",
+  "title": "HTB Account",
+  "elements": [
+    {
+      "ref_id": "@e1",
+      "tag": "a",
+      "type": "a",
+      "text": "Forgot Password?",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e2",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "center",
+      "meta": {
+        "input_type": "password",
+        "input_name": "password",
+        "input_id": "loginPassword",
+        "placeholder": "",
+        "role": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e3",
+      "tag": "i",
+      "type": "button",
+      "text": "",
+      "position": "center",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e4",
+      "tag": "button",
+      "type": "button",
+      "text": "Sign in",
+      "position": "center",
+      "meta": {
+        "button_type": "submit",
+        "input_id": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e5",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "top",
+      "meta": {
+        "input_type": "email",
+        "input_name": "email",
+        "input_id": "loginEmail",
+        "placeholder": "",
+        "role": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e6",
+      "tag": "button",
+      "type": "button",
+      "text": "Sign in with Google",
+      "position": "bottom",
+      "meta": {
+        "button_type": "button",
+        "input_id": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e7",
+      "tag": "button",
+      "type": "button",
+      "text": "Sign in with Linkedin",
+      "position": "bottom",
+      "meta": {
+        "button_type": "button",
+        "input_id": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e8",
+      "tag": "button",
+      "type": "button",
+      "text": "Sign in with Github",
+      "position": "bottom",
+      "meta": {
+        "button_type": "button",
+        "input_id": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e9",
+      "tag": "a",
+      "type": "a",
+      "text": "Create Account",
+      "position": "bottom",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e10",
+      "tag": "input",
+      "type": "input",
+      "text": "",
+      "position": "top",
+      "meta": {
+        "input_type": "hidden",
+        "input_name": "cf-turnstile-response",
+        "input_id": "cf-chl-widget-17taw_response",
+        "placeholder": "",
+        "role": null
+      },
+      "selector": null
+    },
+    {
+      "ref_id": "@e11",
+      "tag": "a",
+      "type": "a",
+      "text": "Hack The Box",
+      "position": "bottom",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e12",
+      "tag": "a",
+      "type": "a",
+      "text": "User Agreement",
+      "position": "bottom",
+      "meta": {},
+      "selector": null
+    },
+    {
+      "ref_id": "@e13",
+      "tag": "a",
+      "type": "a",
+      "text": "Privacy Notice",
+      "position": "bottom",
+      "meta": {},
+      "selector": null
+    }
+  ]
+}

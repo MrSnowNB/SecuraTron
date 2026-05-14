@@ -143,6 +143,7 @@ def run_shell_atom(card: dict, inputs: dict, session_id: str) -> dict:
     # 3. Inject automatic built-ins
     expand_inputs['session'] = session_id
     expand_inputs['ts'] = str(int(time.time()))
+    expand_inputs['base_dir'] = str(BASE_DIR)
     
     command = safe_expand(cmd_template, expand_inputs)
     
@@ -298,22 +299,35 @@ def _resolve_condition(condition_str, steps_results):
     this function resolves {{steps.X.result}} to the actual Python
     result object so the evaluator can inspect its contents.
 
-    Returns the resolved value (dict, list, str, etc.).
+    Supports:
+    - {{steps.X.result}} -> repr of the result dict (evaluated as dict)
+    - {{steps.X.result.Y}} -> dict repr + ['Y'] suffix for key access
+
+    Returns the resolved string ready for eval().
     """
-    result = condition_str
+    import re
 
-    # Replace {{steps.X.result}} with the actual Python result object
-    for step_name, step_res in steps_results.items():
-        pattern = "{{" + f"steps.{step_name}.result" + "}}"
-        if pattern in result:
-            actual_result = step_res.get("result")
-            if actual_result is None:
-                actual_result = {}
-            # Escape any single quotes in the dict repr for safe eval
-            repr_str = repr(actual_result)
-            result = result.replace(pattern, repr_str)
+    # Pattern: {{steps.NAME.result.KEY}} or {{steps.NAME.result}}
+    pattern = r'\{\{steps\.(\w+)\.(?:result\.)?(\w*)\}\}'
 
-    return result
+    def replacer(m):
+        step_name = m.group(1)
+        field = m.group(2)  # may be empty for {{steps.X.result}}
+
+        actual_result = steps_results.get(step_name, {}).get("result")
+        if actual_result is None:
+            actual_result = {}
+
+        if field:
+            # {{steps.X.result.Y}} -> dict repr + ['Y'] for key access
+            # Using ['Y'] instead of .Y because dict keys are strings,
+            # not Python attributes
+            return repr(actual_result) + "['" + field + "']"
+        else:
+            # {{steps.X.result}} -> just the dict repr
+            return repr(actual_result)
+
+    return re.sub(pattern, replacer, condition_str)
 
 
 def _evaluate_condition(resolved_condition):

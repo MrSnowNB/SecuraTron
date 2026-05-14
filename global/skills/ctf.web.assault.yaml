@@ -1,0 +1,139 @@
+author: hermes
+created: '2026-05-05T21:55:00-04:00'
+description: >
+  Web application attack chain molecule. Chains recon → vulnerability identification
+  → exploit selection → exploitation → flag capture for web-based CTF challenges.
+id: ctf.web.assault
+kind: molecule
+tier: global
+version: 1
+
+implementation:
+  kind: compose
+  dag:
+    recon:
+      atom: ctf.recon.full
+      inputs:
+        target: '{{inputs.target}}'
+    exploit_search:
+      atom: exploit.db.search
+      inputs:
+        search_term: '{{inputs.exploit_search_term}}'
+      depends_on:
+        - recon
+    exploit_execute:
+      atom: shell.run
+      inputs:
+        command: '{{inputs.exploit_command}}'
+      depends_on:
+        - exploit_search
+      condition: 'exploit.confidence >= "high"'
+    flag_capture:
+      atom: shell.run
+      inputs:
+        command: 'find / -name "*flag*" -type f 2>/dev/null; cat /home/*/*/user.txt 2>/dev/null; cat /root/root.txt 2>/dev/null'
+      depends_on:
+        - exploit_execute
+    record_results:
+      atom: mem.write_session
+      inputs:
+        path: '{{session}}/findings/ctf_web_assault.json'
+        data:
+          molecule: ctf.web.assault
+          target: '{{inputs.target}}'
+          exploit_used: '{{inputs.exploit_search_term}}'
+          flag_captured: '{{steps.flag_capture.result}}'
+      depends_on:
+        - flag_capture
+
+inputs:
+  target:
+    required: true
+    type: string
+    validator: rfc1123_host_or_ip
+  exploit_search_term:
+    required: false
+    type: string
+    description: "Search term for exploit-db (e.g., 'Apache 2.4.41')"
+  exploit_command:
+    required: false
+    type: string
+    description: "Custom exploit command to run"
+
+outputs:
+  type: ctf.web.assault.v1
+
+doctrine:
+  purpose: >
+    End-to-end web application attack chain. After recon identifies
+    vulnerable services, this molecule searches exploit-db for matches,
+    executes the exploit, and captures flags.
+  
+  attack_patterns:
+    - name: RCE via web vuln
+      pattern: >
+        Recon finds web vuln → searchsploit matches → custom Python exploit
+        → reverse shell → privilege escalation → flag capture
+      tools:
+        - ctf.recon.full
+        - exploit.db.search
+        - shell.run
+    - name: SQL injection
+      pattern: >
+        Recon finds SQL-enabled endpoint → sqlmap automated injection
+        → data exfiltration → shell via INTO OUTFILE → flag
+      tools:
+        - ctf.recon.full
+        - sqlmap
+        - shell.run
+    - name: Auth bypass
+      pattern: >
+        Recon finds login page → browser.inspect maps form → credential
+        stuffing or brute-force → admin panel → flag
+      tools:
+        - ctf.recon.full
+        - web.browser.inspect
+        - web.browser.interact
+    - name: File upload
+      pattern: >
+        Recon finds upload form → PHP/webshell upload → reverse shell
+        → privilege escalation → flag
+      tools:
+        - ctf.recon.full
+        - web.browser.inspect
+        - shell.run
+
+  safety_gates:
+    - gate: operator_approval_required
+      description: >
+        Exploit execution requires operator approval unless the
+        exploit is classified as low-risk (information disclosure only).
+    - gate: no_lateral_movement
+      description: >
+        Stay within scope. Do not pivot to other machines without
+        explicit operator authorization.
+
+prerequisites:
+  - ctf.recon.full
+  - exploit.db.search
+  - shell.run
+  - mem.write_session
+
+preconditions:
+  - scope.includes(inputs.target)
+
+promotion:
+  required_distinct_inputs: 3
+  required_success: 3
+  requires_human_review: true
+
+reversible: true
+risk: medium
+side_effects:
+  - system_change
+  - exploit_execution
+tier: global
+trials:
+  failure: 0
+  last_run: null
+  success: 0

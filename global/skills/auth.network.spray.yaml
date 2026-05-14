@@ -25,7 +25,7 @@ implementation:
       depends_on:
         - port_scan
       condition: >-
-        {{steps.port_scan.result}}
+        {{steps.port_scan.result.port_22_open}}
     ftp_spray:
       atom: auth.hydra
       inputs:
@@ -37,7 +37,7 @@ implementation:
       depends_on:
         - port_scan
       condition: >-
-        {{steps.port_scan.result}}
+        {{steps.port_scan.result.port_21_open}}
     save_findings:
       atom: mem.write_session
       inputs:

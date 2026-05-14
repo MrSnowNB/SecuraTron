@@ -20,10 +20,16 @@ SKILLS_DIR = BASE_DIR / "global" / "skills"
 EVIDENCE_DIR = BASE_DIR / "global" / "evidence" / "locker"
 BIN_DIR = BASE_DIR / "global" / "bin"
 
+# TEST-NET-1 (RFC 5737) — reserved, never routed, never reaches a real host.
+# NOTE: TCP SYN to non-routable addresses hangs on Linux (kernel SYN timeout).
+# 127.0.0.1 is used as the primary safe target — local loopback, no external risk.
+_SAFETNET = "127.0.0.1"
+
 def safe_mock_inputs_for_tool(tool_id: str, card: dict) -> dict:
     """Generate safe mock inputs based on the tool's input definitions."""
     inputs_def = card.get("inputs", {})
     mock = {}
+    _ts = str(int(time.time()))
     
     for field_name, field_def in inputs_def.items():
         if not isinstance(field_def, dict):
@@ -34,11 +40,11 @@ def safe_mock_inputs_for_tool(tool_id: str, card: dict) -> dict:
         field_type = field_def.get("type", "string")
         
         if validator in ("rfc1123_host_or_cidr", "rfc1123_host_or_ip"):
-            mock[field_name] = "127.0.0.1"
+            mock[field_name] = _SAFETNET
         elif validator == "rfc1123_hostname":
             mock[field_name] = "localhost"
         elif field_name == "target":
-            mock[field_name] = "127.0.0.1"
+            mock[field_name] = _SAFETNET
         elif field_name in ("flags", "command"):
             mock[field_name] = field_def.get("default", "-h")
         elif field_name in ("user_list", "pass_list", "wordlist"):
@@ -62,7 +68,7 @@ def safe_mock_inputs_for_tool(tool_id: str, card: dict) -> dict:
         elif field_name == "tier":
             mock[field_name] = "global"
         elif field_name == "session_id":
-            mock[field_name] = "TEST"
+            mock[field_name] = f"TEST-{tool_id}-{_ts}"
         elif field_name == "project_id":
             mock[field_name] = "lab-internal"
         elif field_name == "author":

@@ -1,12 +1,12 @@
 {
   "project_id": "lab-internal",
   "version": "1.0.0",
-  "last_updated": "2026-05-02T14:10:16.990406+00:00",
-  "current_session": "01KQGKSK03QY35VDPJWDVX7K32",
+  "last_updated": "2026-05-06T13:22:31.210298+00:00",
+  "current_session": "T2-FINDINGS-001",
   "progress": {
-    "total_sessions": 87,
-    "sessions_with_findings": 17,
-    "sessions_failed": 79,
+    "total_sessions": 90,
+    "sessions_with_findings": 23,
+    "sessions_failed": 80,
     "atoms_built": 3,
     "atoms_promoted": 0,
     "improvements_closed": 4,
@@ -84,13 +84,6 @@
       "created_at": "2026-04-25T22:00:00Z",
       "fixed_at": "2026-05-02T12:00:00Z",
       "notes": "Fixed in dispatch.py and gate.py with validation"
-    },
-    {
-      "id": "ISSUE-TEST-001",
-      "title": "State Management Test Issue",
-      "status": "test",
-      "created_at": "2026-05-02T14:06:02.692597+00:00",
-      "notes": "This is a test issue to verify append functionality"
     }
   ],
   "priorities": [
@@ -118,25 +111,25 @@
   ],
   "recent_sessions": [
     {
-      "session_id": "01KQGKSK03QY35VDPJWDVX7K32",
-      "timestamp": "2026-05-02T14:07:29.876870+00:00",
+      "session_id": "T2-FINDINGS-001",
+      "timestamp": "2026-05-06T13:21:54.977672+00:00",
       "status": "success",
-      "findings": 5,
-      "notes": "Test session with 5 findings"
+      "findings": 3,
+      "notes": "Phase 2 findings"
     },
     {
-      "session_id": "01KQGKSK03QY35VDPJWDVX7K31",
-      "timestamp": "2026-05-02T14:07:06.957723+00:00",
+      "session_id": "T2-FAILED-001",
+      "timestamp": "2026-05-06T13:21:47.509814+00:00",
       "status": "failed",
       "findings": 0,
-      "notes": "Test failed session - template resolution error"
+      "notes": "Phase 2 test fail"
     },
     {
-      "session_id": "01KQGKSK03QY35VDPJWDVX7K30",
-      "timestamp": "2026-05-02T14:06:45.757515+00:00",
+      "session_id": "T2-SUCCESS-001",
+      "timestamp": "2026-05-06T13:21:42.721214+00:00",
       "status": "success",
       "findings": 1,
-      "notes": "Test successful session"
+      "notes": "Phase 2 test success"
     },
     {
       "session_id": "01KQGKSK03QY35VDPJWDVX7K30",
@@ -147,7 +140,5 @@
     }
   ],
   "targets": [],
-  "atoms": [],
-  "nonexistent_key": "test_value",
-  "test_json": "{invalid"
+  "atoms": []
 }
